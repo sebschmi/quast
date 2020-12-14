@@ -126,7 +126,7 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
 def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath,
                       reference_chromosomes, ns_by_chromosomes, old_contigs_fpath, bed_fpath, threads=1):
     logger.info('  Running align_and_analyze with ' + str(threads) + ' threads')
-    logger.info(f"  {is_cyclic=}\n  {index=}\n  {contigs_fpath=}\n  {output_dirpath=}\n  {ref_fpath=}\n  {reference_chromosomes=}\n  {ns_by_chromosomes=}\n  {old_contigs_fpath=}\n  {bed_fpath=}\n  {threads=}")
+    #logger.info(f"  {is_cyclic=}\n  {index=}\n  {contigs_fpath=}\n  {output_dirpath=}\n  {ref_fpath=}\n  {reference_chromosomes=}\n  {ns_by_chromosomes=}\n  {old_contigs_fpath=}\n  {bed_fpath=}\n  {threads=}")
 
     tmp_output_dirpath = create_minimap_output_dir(output_dirpath)
     assembly_label = qutils.label_from_fpath(contigs_fpath)
