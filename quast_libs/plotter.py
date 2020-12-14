@@ -414,7 +414,6 @@ def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, e
         logger.info('  Drawing ' + title + ' plot...')
 
     e_size_max = eval(e_size_max)
-    print("e_size_max is " + str(e_size_max))
 
     plots = []
     json_vals_x = []  # coordinates for Nx-like plots in HTML-report

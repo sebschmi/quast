@@ -80,6 +80,7 @@ def do(ref_fpath, contigs_fpaths, aligned_contigs_fpaths, output_dirpath,
                                 'Cumulative length (aligned contigs)')
 
         # Drawing NAx and NGAx plots...
+    logger.info("Making plots...")
     plotter.Nx_plot(output_dirpath, num_contigs > qconfig.max_points, aligned_contigs_fpaths, aligned_lengths_lists, aligned_stats_dirpath + '/NAx_plot', 'NAx',
                     assembly_lengths)
     e_size_max = reporting.get(aligned_contigs_fpaths[0]).get_field(reporting.Fields.E_SIZE_MAX)
