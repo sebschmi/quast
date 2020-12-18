@@ -457,16 +457,16 @@ def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, e
         from quast_libs.html_saver import html_saver
         html_saver.save_coord(results_dir, json_vals_x, json_vals_y, 'coord' + title, contigs_fpaths)
 
+    # Save raw coordinates
+    with open(plot_fpath + ".csv", 'w') as file:
+        for x, y in zip(vals_px, vals_py):
+            file.write(str(x) + ", " + str(y) + "\n")
+
     if not can_draw_plots:
         return
 
     legend_list = [label_from_fpath(fpath) for fpath in contigs_fpaths]
     create_plot(plot_fpath, title, plots, legend_list, x_label='x', y_label='EAxmax', x_limit=[0, 100])
-
-    # Save raw coordinates
-    with open(plot_fpath + ".csv", 'w') as file:
-        for x, y in zip(vals_x, vals_y):
-            file.write(str(x) + ", " + str(y) + "\n")
 
 
 # routine for GC-plot
