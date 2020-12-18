@@ -431,12 +431,12 @@ def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, e
     for x, eax in enumerate(e_size_max):
         eax = float(eax)
         if can_draw_plots:
-            vals_px.append(vals_px[-1] + 1e-10) # eps
+            vals_px.append(vals_px[-1] + 1e-2) # eps
             vals_py.append(eax)
             vals_px.append(x)
             vals_py.append(eax)
         if vals_y[-1] - eax > min_difference or len(vals_x) == 1:
-            vals_x.append(vals_x[-1] + 1e-10) # eps
+            vals_x.append(vals_x[-1] + 1e-2) # eps
             vals_y.append(eax)
             vals_x.append(x)
             vals_y.append(eax)
@@ -444,9 +444,9 @@ def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, e
         json_vals_x.append(vals_x)
         json_vals_y.append(vals_y)
     if can_draw_plots:
-        vals_px.append(vals_px[-1] + 1e-10) # eps
+        vals_px.append(vals_px[-1] + 1e-2) # eps
         vals_py.append(0.0)
-        vals_x.append(vals_x[-1] + 1e-10) # eps
+        vals_x.append(vals_x[-1] + 1e-2) # eps
         vals_y.append(0.0)
         from quast_libs import plotter_data
         color = plotter_data.colors[0]
