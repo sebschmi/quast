@@ -464,7 +464,7 @@ def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, e
     create_plot(plot_fpath, title, plots, legend_list, x_label='x', y_label='EAxmax', x_limit=[0, 100])
 
     # Save raw coordinates
-    with file = open(plot_fpath + ".csv", 'w'):
+    with open(plot_fpath + ".csv", 'w') as file:
         for x, y in zip(vals_x, vals_y):
             file.writeln(x + ", " + y)
 
