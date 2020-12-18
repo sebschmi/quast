@@ -466,7 +466,7 @@ def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, e
     # Save raw coordinates
     with open(plot_fpath + ".csv", 'w') as file:
         for x, y in zip(vals_x, vals_y):
-            file.write(x + ", " + y + "\n")
+            file.write(str(x) + ", " + str(y) + "\n")
 
 
 # routine for GC-plot
