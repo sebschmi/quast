@@ -463,6 +463,11 @@ def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, e
     legend_list = [label_from_fpath(fpath) for fpath in contigs_fpaths]
     create_plot(plot_fpath, title, plots, legend_list, x_label='x', y_label='EAxmax', x_limit=[0, 100])
 
+    # Save raw coordinates
+    with file = open(plot_fpath + ".csv", 'w'):
+        for i, x in enumerate(e_size_max):
+            file.writeln(i + ", " + x)
+
 
 # routine for GC-plot
 def GC_content_plot(ref_fpath, contigs_fpaths, list_of_GC_distributions, plot_fpath):
