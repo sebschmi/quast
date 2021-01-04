@@ -63,6 +63,7 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
     with open(used_snps_fpath, 'w') as used_snps_f:
         for chr_name, aligns in ref_aligns.items():
             for align in aligns:
+                # Vars with 1 are on the reference, vars with 2 are on the contig
                 ref_pos, ctg_pos = align.s1, align.s2
                 strand_direction = 1 if align.s2 < align.e2 else -1
                 for op in parse_cs_tag(align.cigar):
@@ -96,12 +97,14 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
                         ref_pos += n_bases
                         ctg_pos += n_bases * strand_direction
                 if align.s1 < align.e1:
-                    align_size = align.e1 + 1 - align.s1
+                    #align_size = align.e1 + 1 - align.s1
+                    align_size = align.len2 # Use the same len that is used to compute NGAx
                     for pos in range(align.s1, align.e1 + 1):
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
                 else:
-                    align_size = (len(genome_mapping[align.ref]) - align.s1) + (align.e1 + 1 - 1)
+                    #align_size = (len(genome_mapping[align.ref]) - align.s1) + (align.e1 + 1 - 1)
+                    align_size = align.len2 # Use the same len that is used to compute NGAx
                     for pos in range(align.s1, len(genome_mapping[align.ref])):
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
