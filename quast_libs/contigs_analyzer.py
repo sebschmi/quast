@@ -239,8 +239,8 @@ def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath
     logger.info("    Lengths of ref      aligns = " + str(ref_aligns_lengths))
     logger.info("    Computed lengths of aligns = " + str(computed_aligns_lengths))
     logger.info("    Genome length = " + str(total_reg_len))
-    logger.info("    Ref      NGA50 = %d" % N50.NG50_and_LG50(ref_aligns_lengths, total_reg_len, need_sort=True)[0])
-    logger.info("    Computed NGA50 = %d" % N50.NG50_and_LG50(computed_aligns_lengths, total_reg_len, need_sort=True)[0])
+    logger.info("    Ref      NGA50 = " + str(N50.NG50_and_LG50(ref_aligns_lengths, total_reg_len, need_sort=True)[0]))
+    logger.info("    Computed NGA50 = " + str(N50.NG50_and_LG50(computed_aligns_lengths, total_reg_len, need_sort=True)[0]))
 
     log_out_f.write('Analyzing coverage...\n')
     if qconfig.show_snps:
