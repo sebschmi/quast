@@ -132,6 +132,9 @@ def analyze_contigs(ca_output, contigs_fpath, unaligned_fpath, unaligned_info_fp
     unaligned_info_file = open(unaligned_info_fpath, 'w')
     unaligned_info_file.write('\t'.join(['Contig', 'Total_length', 'Unaligned_length', 'Unaligned_type', 'Unaligned_parts']) + '\n')
     for contig, seq in fastaparser.read_fasta(contigs_fpath):
+        logger.info("      Processing contig " + str(contig) + " (len " + str(len(seq)) + ")")
+        original_aligned_lengths = aligned_lengths.copy()
+
         #Recording contig stats
         ctg_len = len(seq)
         ca_output.stdout_f.write('CONTIG: %s (%dbp)\n' % (contig, ctg_len))
@@ -391,6 +394,8 @@ def analyze_contigs(ca_output, contigs_fpath, unaligned_fpath, unaligned_info_fp
             fully_unaligned_bases += ctg_len - number_ns
             ca_output.stdout_f.write('\t\tUnaligned bases: %d (number of Ns: %d)\n' % (ctg_len, number_ns))
             save_unaligned_info([], contig, ctg_len, ctg_len, unaligned_info_file)
+
+        logger.info("      Added to aligned_lengths = " + str(aligned_lengths[len(original_aligned_lengths):]))
 
         ca_output.icarus_out_f.write('\t'.join(['CONTIG', contig, str(ctg_len), contig_type]) + '\n')
         ca_output.stdout_f.write('\n')

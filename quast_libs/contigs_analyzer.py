@@ -23,7 +23,7 @@ import re
 from collections import defaultdict
 from os.path import join, dirname
 
-from quast_libs import reporting, qconfig, qutils, fastaparser
+from quast_libs import reporting, qconfig, qutils, fastaparser, N50
 from quast_libs.ca_utils import misc
 from quast_libs.ca_utils.analyze_contigs import analyze_contigs
 from quast_libs.ca_utils.analyze_misassemblies import Mapping, IndelsInfo
@@ -57,9 +57,14 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
     indels_info = IndelsInfo()
     maximum_contig_align_size_per_ref_base = {}
     genome_mapping = {}
+    genome_length = 0
     for chr_name, chr_len in reference_chromosomes.items():
         genome_mapping[chr_name] = [0] * (chr_len + 1)
         maximum_contig_align_size_per_ref_base[chr_name] = [0] * (chr_len + 1)
+        genome_length += chr_len
+    logger.info("      Genome length: " + str(genome_length))
+
+    alignment_total_length = 0
     with open(used_snps_fpath, 'w') as used_snps_f:
         for chr_name, aligns in ref_aligns.items():
             for align in aligns:
@@ -96,15 +101,17 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
                     else:
                         ref_pos += n_bases
                         ctg_pos += n_bases * strand_direction
+
+                alignment_total_length += align.len2_excluding_local_misassemblies
                 if align.s1 < align.e1:
                     #align_size = align.e1 + 1 - align.s1
-                    align_size = align.len2 # Use the same len that is used to compute NGAx
+                    align_size = align.len2_excluding_local_misassemblies # Use the same len that is used to compute NGAx
                     for pos in range(align.s1, align.e1 + 1):
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
                 else:
                     #align_size = (len(genome_mapping[align.ref]) - align.s1) + (align.e1 + 1 - 1)
-                    align_size = align.len2 # Use the same len that is used to compute NGAx
+                    align_size = align.len2_excluding_local_misassemblies # Use the same len that is used to compute NGAx
                     for pos in range(align.s1, len(genome_mapping[align.ref])):
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
@@ -113,6 +120,7 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
             for i in ns_by_chromosomes[align.ref]:
                 genome_mapping[align.ref][i] = 0
+                maximum_contig_align_size_per_ref_base[align.ref][pos] = 0
 
     covered_bases = sum([sum(genome_mapping[chrom]) for chrom in genome_mapping])
     maximum_contig_align_size_per_ref_base = [align_size for contig in maximum_contig_align_size_per_ref_base.values() for align_size in contig]
@@ -122,6 +130,10 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
         e_size_max[i] = maximum_contig_align_size_per_ref_base[(len(maximum_contig_align_size_per_ref_base) * i) // 100]
     e_size_max[100] = maximum_contig_align_size_per_ref_base[-1]
     print("computed e_size_max as " + str(e_size_max))
+    logger.info("      Duplication ratio = %.2f = %d/%d" % ((alignment_total_length / covered_bases), alignment_total_length, covered_bases))
+    logger.info("      EA50max = %d" % e_size_max[50])
+    logger.info("      len2 NGA50 = %d" % N50.NG50_and_LG50([align.len2 for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0])
+    logger.info("      len2_excluding_local_misassemblies NGA50 = %d" % N50.NG50_and_LG50([align.len2_excluding_local_misassemblies for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0])
 
     return covered_bases, indels_info, e_size_max
 
@@ -188,6 +200,8 @@ def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath
     log_out_f.write('Parsing coords...\n')
     aligns = {}
     with open(coords_fpath) as coords_file:
+        logger.info("  Opening coords_fpath '" + str(coords_fpath) + "'")
+        log_out_f.write("Opening coords_fpath '" + str(coords_fpath) + "'\n")
         for line in coords_file:
             mapping = Mapping.from_line(line)
             aligns.setdefault(mapping.contig, []).append(mapping)
@@ -217,6 +231,16 @@ def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath
     log_out_f.write('Analyzing contigs...\n')
     result, ref_aligns, total_indels_info, aligned_lengths, misassembled_contigs, misassemblies_in_contigs, aligned_lengths_by_contigs =\
         analyze_contigs(ca_output, contigs_fpath, unaligned_fpath, unaligned_info_fpath, aligns, ref_features, reference_chromosomes, is_cyclic)
+
+    ref_aligns_lengths = [align.len2_excluding_local_misassemblies for aligns in ref_aligns.values() for align in aligns]
+    ref_aligns_lengths.sort(reverse=True)
+    computed_aligns_lengths = aligned_lengths.copy()
+    computed_aligns_lengths.sort(reverse=True)
+    logger.info("    Lengths of ref      aligns = " + str(ref_aligns_lengths))
+    logger.info("    Computed lengths of aligns = " + str(computed_aligns_lengths))
+    logger.info("    Genome length = " + str(total_reg_len))
+    logger.info("    Ref      NGA50 = %d" % N50.NG50_and_LG50(ref_aligns_lengths, total_reg_len, need_sort=True)[0])
+    logger.info("    Computed NGA50 = %d" % N50.NG50_and_LG50(computed_aligns_lengths, total_reg_len, need_sort=True)[0])
 
     log_out_f.write('Analyzing coverage...\n')
     if qconfig.show_snps:

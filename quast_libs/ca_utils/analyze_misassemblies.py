@@ -47,11 +47,12 @@ class StructuralVariations(object):
 
 
 class Mapping(object):
-    def __init__(self, s1, e1, s2=None, e2=None, len1=None, len2=None, idy=None, ref=None, contig=None, cigar=None, ns_pos=None, sv_type=None):
+    def __init__(self, s1, e1, s2=None, e2=None, len1=None, len2=None, idy=None, ref=None, contig=None, cigar=None, ns_pos=None, sv_type=None, len2_excluding_local_misassemblies=None):
         self.s1, self.e1, self.s2, self.e2, self.len1, self.len2, self.idy, self.ref, self.contig = s1, e1, s2, e2, len1, len2, idy, ref, contig
         self.cigar = cigar
         self.ns_pos = ns_pos
         self.sv_type = sv_type
+        self.len2_excluding_local_misassemblies = len2_excluding_local_misassemblies if len2_excluding_local_misassemblies is not None else len2
 
     @classmethod
     def from_line(cls, line):
@@ -94,6 +95,9 @@ class Mapping(object):
     def pos_strand(self):
         """Returns True for positive strand and False for negative"""
         return self.s2 < self.e2
+
+    def len2_excluding_local_misassemblies(self):
+        return self.len2_excluding_local_misassemblies if self.len2_excluding_local_misassemblies is not None else self.len2
 
 
 class IndelsInfo(object):
@@ -438,9 +442,14 @@ def is_gap_filled_ns(contig_seq, align1, align2):
 def process_misassembled_contig(sorted_aligns, is_cyclic, aligned_lengths, region_misassemblies, ref_lens, ref_aligns,
                                 ref_features, contig_seq, misassemblies_by_ref, istranslocations_by_ref, region_struct_variations,
                                 ca_output):
+    logger.info("      Processing misassembled contig")
+    original_aligned_lengths = aligned_lengths.copy()
+
     misassembly_internal_overlap = 0
     prev_align = sorted_aligns[0]
     cur_aligned_length = prev_align.len2
+    cur_alignments = [0]
+
     is_misassembled = False
     contig_is_printed = False
     indels_info = IndelsInfo()
@@ -526,6 +535,11 @@ def process_misassembled_contig(sorted_aligns, is_cyclic, aligned_lengths, regio
             cnt_misassemblies += 1
             aligned_lengths.append(cur_aligned_length)
             contig_aligned_length += cur_aligned_length
+            for i in cur_alignments:
+                sorted_aligns[i].len2_excluding_local_misassemblies = cur_aligned_length
+                #for align in ref_aligns.get(sorted_aligns[i].ref, []):
+                #    align.len2_excluding_local_misassemblies = cur_aligned_length
+            cur_alignments = []
             cur_aligned_length = 0
             if not contig_is_printed:
                 ca_output.misassembly_f.write(prev_align.contig + '\n')
@@ -598,6 +612,11 @@ def process_misassembled_contig(sorted_aligns, is_cyclic, aligned_lengths, regio
                 if qconfig.strict_NA:
                     aligned_lengths.append(cur_aligned_length)
                     contig_aligned_length += cur_aligned_length
+                    for i in cur_alignments:
+                        sorted_aligns[i].len2_excluding_local_misassemblies = cur_aligned_length
+                        #for align in ref_aligns.get(sorted_aligns[i].ref, []):
+                        #    align.len2_excluding_local_misassemblies = cur_aligned_length
+                    cur_alignments = []
                     cur_aligned_length = 0
 
                 if distance_on_contig < 0:
@@ -617,6 +636,7 @@ def process_misassembled_contig(sorted_aligns, is_cyclic, aligned_lengths, regio
 
         prev_align = next_align
         cur_aligned_length += prev_align.len2 - (-distance_on_contig if distance_on_contig < 0 else 0)
+        cur_alignments.append(i + 1)
 
     #Record the very last alignment
     i = len(sorted_aligns) - 1
@@ -626,10 +646,16 @@ def process_misassembled_contig(sorted_aligns, is_cyclic, aligned_lengths, regio
     ca_output.coords_filtered_f.write(next_align.coords_str() + '\n')
     aligned_lengths.append(cur_aligned_length)
     contig_aligned_length += cur_aligned_length
+    for i in cur_alignments:
+        sorted_aligns[i].len2_excluding_local_misassemblies = cur_aligned_length
+        #for align in ref_aligns.get(sorted_aligns[i].ref, []):
+        #    align.len2_excluding_local_misassemblies = cur_aligned_length
 
     assert contig_aligned_length <= len(contig_seq), "Internal QUAST bug: contig aligned length is greater than " \
                                                      "contig length (contig: %s, len: %d, aligned: %d)!" % \
                                                      (sorted_aligns[0].contig, contig_aligned_length, len(contig_seq))
+
+    logger.info("        Added to aligned_lengths = " + str(aligned_lengths[len(original_aligned_lengths):]))
 
     return is_misassembled, misassembly_internal_overlap, indels_info, cnt_misassemblies, contig_aligned_length
 
