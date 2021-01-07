@@ -66,6 +66,9 @@ def print_results(contigs_fpath, log_out_f, used_snps_fpath, total_indels_info, 
     log_out_f.write('\n')
     log_out_f.write('\tCovered Bases: %d\n' % result['total_aligned_bases'])
     log_out_f.write('\tEA50max: %s\n' % str(result['e_size_max'][50]))
+    log_out_f.write('\tEA75max: %s\n' % str(result['e_size_max'][75]))
+    log_out_f.write('\tStrict EA50max: %s\n' % str(result['strict_e_size_max'][50]))
+    log_out_f.write('\tStrict EA75max: %s\n' % str(result['strict_e_size_max'][75]))
     log_out_f.write('\n')
     log_out_f.write('\tSNPs: %d\n' % total_indels_info.mismatches)
     log_out_f.write('\tInsertions: %d\n' % total_indels_info.insertions)
@@ -91,6 +94,9 @@ def save_result(result, report, fname, ref_fpath, genome_size):
     indels_list = result['indels_list']
     total_aligned_bases = result['total_aligned_bases']
     ea50max = result['e_size_max'][50]
+    ea75max = result['e_size_max'][75]
+    strict_ea50max = result['strict_e_size_max'][50]
+    strict_ea75max = result['strict_e_size_max'][75]
     e_size_max = result['e_size_max']
     half_unaligned_with_misassembly = result['half_unaligned_with_misassembly']
 
@@ -129,6 +135,9 @@ def save_result(result, report, fname, ref_fpath, genome_size):
         report.add_field(reporting.Fields.INDELSERROR, "%.2f" % (float(report.get_field(reporting.Fields.INDELS))
                                                                  * 100000.0 / float(total_aligned_bases)))
         report.add_field(reporting.Fields.EA50MAX, str(ea50max))
+        report.add_field(reporting.Fields.EA75MAX, str(ea75max))
+        report.add_field(reporting.Fields.STRICT_EA50MAX, str(strict_ea50max))
+        report.add_field(reporting.Fields.STRICT_EA75MAX, str(strict_ea75max))
         report.add_field(reporting.Fields.E_SIZE_MAX, str(e_size_max))
 
     # for misassemblies report:

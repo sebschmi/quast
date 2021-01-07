@@ -56,11 +56,13 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
     #logger.info(f"    {ref_aligns=}")
     indels_info = IndelsInfo()
     maximum_contig_align_size_per_ref_base = {}
+    strict_maximum_contig_align_size_per_ref_base = {}
     genome_mapping = {}
     genome_length = 0
     for chr_name, chr_len in reference_chromosomes.items():
         genome_mapping[chr_name] = [0] * (chr_len + 1)
         maximum_contig_align_size_per_ref_base[chr_name] = [0] * (chr_len + 1)
+        strict_maximum_contig_align_size_per_ref_base[chr_name] = [0] * (chr_len + 1)
         genome_length += chr_len
     logger.info("      Genome length: " + str(genome_length))
 
@@ -104,38 +106,52 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
 
                 alignment_total_length += align.len2_excluding_local_misassemblies
                 if align.s1 < align.e1:
-                    #align_size = align.e1 + 1 - align.s1
                     align_size = align.len2_excluding_local_misassemblies # Use the same len that is used to compute NGAx
+                    strict_align_size = align.len2_including_local_misassemblies # Use the same len that is used to strict compute NGAx
                     for pos in range(align.s1, align.e1 + 1):
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
+                        strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])
                 else:
-                    #align_size = (len(genome_mapping[align.ref]) - align.s1) + (align.e1 + 1 - 1)
                     align_size = align.len2_excluding_local_misassemblies # Use the same len that is used to compute NGAx
+                    strict_align_size = align.len2_including_local_misassemblies # Use the same len that is used to strict compute NGAx
                     for pos in range(align.s1, len(genome_mapping[align.ref])):
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
+                        strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])
                     for pos in range(1, align.e1 + 1):
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
+                        strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])
             for i in ns_by_chromosomes[align.ref]:
                 genome_mapping[align.ref][i] = 0
                 maximum_contig_align_size_per_ref_base[align.ref][pos] = 0
+                strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = 0
 
     covered_bases = sum([sum(genome_mapping[chrom]) for chrom in genome_mapping])
+
     maximum_contig_align_size_per_ref_base = [align_size for contig in maximum_contig_align_size_per_ref_base.values() for align_size in contig]
     maximum_contig_align_size_per_ref_base.sort(reverse=True)
     e_size_max = [0] * 101
     for i in range(0, 100):
         e_size_max[i] = maximum_contig_align_size_per_ref_base[(len(maximum_contig_align_size_per_ref_base) * i) // 100]
     e_size_max[100] = maximum_contig_align_size_per_ref_base[-1]
+
+    strict_maximum_contig_align_size_per_ref_base = [align_size for contig in strict_maximum_contig_align_size_per_ref_base.values() for align_size in contig]
+    strict_maximum_contig_align_size_per_ref_base.sort(reverse=True)
+    strict_e_size_max = [0] * 101
+    for i in range(0, 100):
+        strict_e_size_max[i] = strict_maximum_contig_align_size_per_ref_base[(len(strict_maximum_contig_align_size_per_ref_base) * i) // 100]
+    strict_e_size_max[100] = strict_maximum_contig_align_size_per_ref_base[-1]
+
     print("computed e_size_max as " + str(e_size_max))
     logger.info("      Duplication ratio = %.2f = %d/%d" % ((alignment_total_length / covered_bases), alignment_total_length, covered_bases))
     logger.info("      EA50max = %d" % e_size_max[50])
+    logger.info("      Strict EA50max = %d" % strict_e_size_max[50])
     logger.info("      len2 NGA50 = %d" % N50.NG50_and_LG50([align.len2 for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0])
     logger.info("      len2_excluding_local_misassemblies NGA50 = %d" % N50.NG50_and_LG50([align.len2_excluding_local_misassemblies for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0])
 
-    return covered_bases, indels_info, e_size_max
+    return covered_bases, indels_info, e_size_max, strict_e_size_max
 
 # former plantagora and plantakolya
 def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath,
@@ -245,9 +261,9 @@ def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath
     log_out_f.write('Analyzing coverage...\n')
     if qconfig.show_snps:
         log_out_f.write('Writing SNPs into ' + used_snps_fpath + '\n')
-    total_aligned_bases, indels_info, e_size_max = analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_snps_fpath)
+    total_aligned_bases, indels_info, e_size_max, strict_e_size_max = analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_snps_fpath)
     total_indels_info += indels_info
-    cov_stats = {'SNPs': total_indels_info.mismatches, 'indels_list': total_indels_info.indels_list, 'total_aligned_bases': total_aligned_bases, 'e_size_max': e_size_max}
+    cov_stats = {'SNPs': total_indels_info.mismatches, 'indels_list': total_indels_info.indels_list, 'total_aligned_bases': total_aligned_bases, 'e_size_max': e_size_max, 'strict_e_size_max': strict_e_size_max}
     result.update(cov_stats)
     result = print_results(contigs_fpath, log_out_f, used_snps_fpath, total_indels_info, result)
 
