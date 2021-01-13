@@ -24,9 +24,11 @@ def print_results(contigs_fpath, log_out_f, used_snps_fpath, total_indels_info, 
     log_out_f.write('Results:\n')
 
     log_out_f.write('\tLocal Misassemblies: %d\n' % region_misassemblies.count(Misassembly.LOCAL))
+    log_out_f.write('\tUnique Local Misassemblies: %d\n' % result['unique_local_misassemblies'])
     log_out_f.write('\tMisassemblies: %d\n' % (region_misassemblies.count(Misassembly.RELOCATION) +
                      region_misassemblies.count(Misassembly.INVERSION) + region_misassemblies.count(Misassembly.TRANSLOCATION) +
                      region_misassemblies.count(Misassembly.INTERSPECTRANSLOCATION)))
+    log_out_f.write('\tUnique Misassembiles: %d\n' % result['unique_extensive_misassemblies'])
     log_out_f.write('\t\tRelocations: %d\n' % region_misassemblies.count(Misassembly.RELOCATION))
     log_out_f.write('\t\tTranslocations: %d\n' % region_misassemblies.count(Misassembly.TRANSLOCATION))
     if qconfig.is_combined_ref:
@@ -77,7 +79,7 @@ def print_results(contigs_fpath, log_out_f, used_snps_fpath, total_indels_info, 
     return result
 
 
-def save_result(result, report, fname, ref_fpath, genome_size):
+def save_result(result, report, fname, ref_fpath, genome_size, aligned_lengths):
     region_misassemblies = result['region_misassemblies']
     misassemblies_by_ref = result['misassemblies_by_ref']
     region_struct_variations = result['region_struct_variations']
@@ -124,6 +126,7 @@ def save_result(result, report, fname, ref_fpath, genome_size):
         report.add_field(reporting.Fields.MIS_LONG_INDELS, len([i for i in indels_list if i > qconfig.SHORT_INDEL_THRESHOLD]))
 
     if total_aligned_bases:
+        total_aligned_length = sum(aligned_lengths)
         genome_fraction = total_aligned_bases * 100.0 / genome_size
         duplication_ratio = (report.get_field(reporting.Fields.TOTALLEN) +
                              misassembly_internal_overlap +
@@ -131,14 +134,16 @@ def save_result(result, report, fname, ref_fpath, genome_size):
                              (fully_unaligned_bases + partially_unaligned_bases)) * 1.0 / total_aligned_bases
         report.add_field(reporting.Fields.MAPPEDGENOME, '%.3f' % genome_fraction)
         report.add_field(reporting.Fields.DUPLICATION_RATIO, '%.3f' % duplication_ratio)
-        report.add_field(reporting.Fields.SUBSERROR, "%.2f" % (float(SNPs) * 100000.0 / float(total_aligned_bases)))
+        report.add_field(reporting.Fields.SUBSERROR, "%.2f" % (float(SNPs) * 100000.0 / float(total_aligned_length)))
         report.add_field(reporting.Fields.INDELSERROR, "%.2f" % (float(report.get_field(reporting.Fields.INDELS))
-                                                                 * 100000.0 / float(total_aligned_bases)))
+                                                                 * 100000.0 / float(total_aligned_length)))
         report.add_field(reporting.Fields.EA50MAX, str(ea50max))
         report.add_field(reporting.Fields.EA75MAX, str(ea75max))
         report.add_field(reporting.Fields.STRICT_EA50MAX, str(strict_ea50max))
         report.add_field(reporting.Fields.STRICT_EA75MAX, str(strict_ea75max))
         report.add_field(reporting.Fields.E_SIZE_MAX, str(e_size_max))
+        report.add_field(reporting.Fields.UNIQUE_EXTENSIVE_MISASSEMBLIES, str(result['unique_extensive_misassemblies']))
+        report.add_field(reporting.Fields.UNIQUE_LOCAL_MISASSEMBLIES, str(result['unique_local_misassemblies']))
 
     # for misassemblies report:
     report.add_field(reporting.Fields.MIS_ALL_EXTENSIVE, region_misassemblies.count(Misassembly.RELOCATION) +

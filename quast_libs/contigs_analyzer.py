@@ -144,7 +144,7 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
         strict_e_size_max[i] = strict_maximum_contig_align_size_per_ref_base[(len(strict_maximum_contig_align_size_per_ref_base) * i) // 100]
     strict_e_size_max[100] = strict_maximum_contig_align_size_per_ref_base[-1]
 
-    print("computed e_size_max as " + str(e_size_max))
+    #print("computed e_size_max as " + str(e_size_max))
     logger.info("      Duplication ratio = %.2f = %d/%d" % ((alignment_total_length / covered_bases), alignment_total_length, covered_bases))
     logger.info("      EA50max = %d" % e_size_max[50])
     logger.info("      Strict EA50max = %d" % strict_e_size_max[50])
@@ -338,6 +338,7 @@ def do(reference, contigs_fpaths, is_cyclic, output_dir, old_contigs_fpaths, bed
 
     aligner_statuses = dict(zip(contigs_fpaths, statuses))
     aligned_lengths_per_fpath = dict(zip(contigs_fpaths, aligned_lengths))
+    aligned_lengths = [l for li in aligned_lengths for l in li]
     misc.contigs_aligned_lengths = dict(zip(contigs_fpaths, aligned_lengths_by_contigs))
 
     if AlignerStatus.OK in aligner_statuses.values():
@@ -347,7 +348,7 @@ def do(reference, contigs_fpaths, is_cyclic, output_dir, old_contigs_fpaths, bed
     for index, fname in enumerate(contigs_fpaths):
         report = reporting.get(fname)
         if statuses[index] == AlignerStatus.OK:
-            reports.append(save_result(results[index], report, fname, reference, genome_size))
+            reports.append(save_result(results[index], report, fname, reference, genome_size, aligned_lengths))
         elif statuses[index] == AlignerStatus.NOT_ALIGNED:
             save_result_for_unaligned(results[index], report)
 

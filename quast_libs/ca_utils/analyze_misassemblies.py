@@ -442,11 +442,10 @@ def is_gap_filled_ns(contig_seq, align1, align2):
     gap_in_contig = contig_seq[align1.end(): align2.start() - 1]
     return 'N' * qconfig.Ns_break_threshold in gap_in_contig
 
-
 def process_misassembled_contig(sorted_aligns, is_cyclic, aligned_lengths, region_misassemblies, ref_lens, ref_aligns,
                                 ref_features, contig_seq, misassemblies_by_ref, istranslocations_by_ref, region_struct_variations,
-                                ca_output):
-    logger.info("      Processing misassembled contig")
+                                ca_output, misassemblies_on_reference, local_misassemblies_on_reference):
+    #logger.info("      Processing misassembled contig")
     original_aligned_lengths = aligned_lengths.copy()
 
     misassembly_internal_overlap = 0
@@ -524,11 +523,13 @@ def process_misassembled_contig(sorted_aligns, is_cyclic, aligned_lengths, regio
                 scaff_gap_type = ' (extensive)'
                 region_misassemblies.append(Misassembly.SCAFFOLD_GAP)
                 misassemblies_by_ref[prev_ref].append(Misassembly.SCAFFOLD_GAP)
+                misassemblies_on_reference.append((Misassembly.SCAFFOLD_GAP, prev_align, next_align))
                 ca_output.icarus_out_f.write('fake: scaffold gap size wrong estimation' + scaff_gap_type + '\n')
             else:
                 scaff_gap_type = ' (local)'
                 region_misassemblies.append(Misassembly.LOCAL_SCAFFOLD_GAP)
                 misassemblies_by_ref[prev_ref].append(Misassembly.LOCAL_SCAFFOLD_GAP)
+                local_misassemblies_on_reference.append((Misassembly.LOCAL_SCAFFOLD_GAP, prev_align, next_align))
                 ca_output.icarus_out_f.write('fake: scaffold gap size wrong estimation' + scaff_gap_type + '\n')
             ca_output.stdout_f.write('\t\t\t  Incorrectly estimated size of scaffold gap between these two alignments: ')
             ca_output.stdout_f.write('gap length difference = ' + str(inconsistency) + scaff_gap_type + '\n')
@@ -572,6 +573,7 @@ def process_misassembled_contig(sorted_aligns, is_cyclic, aligned_lengths, regio
             misassemblies_by_ref[prev_ref].append(misassembly_id)
             if misassembly_id == Misassembly.INTERSPECTRANSLOCATION:  # special case
                 misassemblies_by_ref[next_ref].append(misassembly_id)
+            misassemblies_on_reference.append((misassembly_id, prev_align, next_align))
             if is_gap_filled_ns(contig_seq, prev_align, next_align):
                 misassembly_type += ', scaffold gap is present'
                 region_misassemblies.append(misassembly_id + (Misassembly.SCF_INVERSION - Misassembly.INVERSION))
@@ -645,6 +647,7 @@ def process_misassembled_contig(sorted_aligns, is_cyclic, aligned_lengths, regio
                 ca_output.icarus_out_f.write('local misassembly' + reason_msg + '\n')
                 region_misassemblies.append(Misassembly.LOCAL)
                 misassemblies_by_ref[prev_ref].append(Misassembly.LOCAL)
+                local_misassemblies_on_reference.append((Misassembly.LOCAL, prev_align, next_align))
 
         prev_align = next_align
         cur_aligned_length += prev_align.len2 - (-distance_on_contig if distance_on_contig < 0 else 0)
@@ -669,7 +672,7 @@ def process_misassembled_contig(sorted_aligns, is_cyclic, aligned_lengths, regio
                                                      "contig length (contig: %s, len: %d, aligned: %d)!" % \
                                                      (sorted_aligns[0].contig, contig_aligned_length, len(contig_seq))
 
-    logger.info("        Added to aligned_lengths = " + str(aligned_lengths[len(original_aligned_lengths):]))
+    #logger.info("        Added to aligned_lengths = " + str(aligned_lengths[len(original_aligned_lengths):]))
 
     return is_misassembled, misassembly_internal_overlap, indels_info, cnt_misassemblies, contig_aligned_length
 
