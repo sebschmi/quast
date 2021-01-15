@@ -217,7 +217,7 @@ def save_result(result, report, fname, ref_fpath, genome_size, aligned_lengths):
 def save_result_for_unaligned(result, report):
     unaligned_ctgs = report.get_field(reporting.Fields.CONTIGS)
     unaligned_length = report.get_field(reporting.Fields.TOTALLEN)
-    report.add_field(reporting.Fields.UNALIGNED, '%d + %d part' % (unaligned_ctgs, 0))
+    report.add_field(reporting.Fields.UNALIGNED, '%d+%dp' % (unaligned_ctgs, 0))
     report.add_field(reporting.Fields.UNALIGNEDBASES, unaligned_length)
 
     report.add_field(reporting.Fields.UNALIGNED_FULL_CNTGS, unaligned_ctgs)
