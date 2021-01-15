@@ -50,7 +50,7 @@ def print_results(contigs_fpath, log_out_f, used_snps_fpath, total_indels_info, 
     log_out_f.write('\tMisassembled Contigs: %d\n' % len(misassembled_contigs))
     log_out_f.write('\tMisassembled Contig Bases: %d\n' % result['misassembled_bases'])
     log_out_f.write('\tMisassemblies Inter-Contig Overlap: %d\n' % result['misassembly_internal_overlap'])
-    log_out_f.write('Unaligned Contigs: %d + %d part\n' % (result['unaligned'], result['partially_unaligned']))
+    log_out_f.write('Unaligned Contigs: %d+%dp\n' % (result['unaligned'], result['partially_unaligned']))
     log_out_f.write('Half Unaligned Contigs with Misassemblies: %s\n' % str(result['half_unaligned_with_misassembly']))
     log_out_f.write('Unaligned Contig Bases: %d\n' % (result['fully_unaligned_bases'] + result['partially_unaligned_bases']))
 
@@ -113,7 +113,7 @@ def save_result(result, report, fname, ref_fpath, genome_size, aligned_lengths):
         report.add_field(reporting.Fields.STRUCT_VARIATIONS, region_misassemblies.count(Misassembly.MATCHED_SV))
     if qconfig.large_genome:
         report.add_field(reporting.Fields.POTENTIAL_MGE, region_misassemblies.count(Misassembly.POTENTIAL_MGE))
-    report.add_field(reporting.Fields.UNALIGNED, '%d + %d part' % (unaligned, partially_unaligned))
+    report.add_field(reporting.Fields.UNALIGNED, '%d+%dp' % (unaligned, partially_unaligned))
     report.add_field(reporting.Fields.UNALIGNEDBASES, (fully_unaligned_bases + partially_unaligned_bases))
     report.add_field(reporting.Fields.AMBIGUOUS, ambiguous_contigs)
     report.add_field(reporting.Fields.AMBIGUOUSEXTRABASES, ambiguous_contigs_extra_bases)
