@@ -357,10 +357,10 @@ def do(reference, contigs_fpaths, is_cyclic, output_dir, old_contigs_fpaths, bed
         for result in results:
             if "local_contig_breakpoints" in result:
                 for key, value in result["local_contig_breakpoints"].items():
-                    all_breakpoints.setdefault(key, []).append(value)
+                    all_breakpoints.setdefault(key, []).extend(value)
             if "extensive_contig_breakpoints" in result:
                 for key, value in result["extensive_contig_breakpoints"].items():
-                    all_breakpoints.setdefault(key, []).append(value)
+                    all_breakpoints.setdefault(key, []).extend(value)
 
         import json
         with open(join(output_dir, 'contig_breakpoints.json'), 'w') as out_file:
