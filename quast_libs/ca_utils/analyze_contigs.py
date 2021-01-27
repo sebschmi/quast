@@ -413,7 +413,7 @@ def analyze_contigs(ca_output, contigs_fpath, unaligned_fpath, unaligned_info_fp
     if qconfig.unaligned_mis_threshold == 0.0:
         half_unaligned_with_misassembly = None
 
-    unique_extensive_misassemblies, unique_local_misassemblies = aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_reference)
+    unique_extensive_misassemblies, unique_local_misassemblies, local_contig_breakpoints, extensive_contig_breakpoints = aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_reference)
 
     result = {'region_misassemblies': region_misassemblies,
               'region_struct_variations': region_struct_variations.get_count() if region_struct_variations else None,
@@ -427,7 +427,9 @@ def analyze_contigs(ca_output, contigs_fpath, unaligned_fpath, unaligned_info_fp
               'misassemblies_by_ref': misassemblies_by_ref,
               'istranslocations_by_refs': istranslocations_by_ref,
               'unique_extensive_misassemblies': unique_extensive_misassemblies,
-              'unique_local_misassemblies': unique_local_misassemblies}
+              'unique_local_misassemblies': unique_local_misassemblies,
+              'local_contig_breakpoints': local_contig_breakpoints,
+              'extensive_contig_breakpoints': extensive_contig_breakpoints}
 
     return result, ref_aligns, total_indels_info, aligned_lengths, misassembled_contigs, misassemblies_in_contigs, contigs_aligned_lengths
 
@@ -468,14 +470,14 @@ def aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_r
                 continue
 
             contig_breakpoint = None
-            if mor[2].end() + 1 == mor[3].start():
-                contig_breakpoint = mor[2].end()
-            elif mor[3].end() + 1 == mor[2].start():
-                contig_breakpoint = mor[3].end()
+            if mor[2].end() < mor[3].start():
+                contig_breakpoint = (mor[2].end() + 1, mor[3].start())
+            elif mor[3].end() < mor[2].start():
+                contig_breakpoint = (mor[3].end() + 1, mor[2].start())
             else:
-                logger.info("      Found weird local moc: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
+                logger.error("      Found weird local moc: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
             if mor[2].contig != mor[3].contig:
-                logger.info("      Found local moc with differing contig: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
+                logger.error("      Found local moc with differing contig: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
 
             if mor[2].pos_strand():
                 start = mor[2].e1
@@ -494,14 +496,14 @@ def aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_r
                 continue
 
             contig_breakpoint = None
-            if mor[2].end() + 1 == mor[3].start():
-                contig_breakpoint = mor[2].end()
-            elif mor[3].end() + 1 == mor[2].start():
-                contig_breakpoint = mor[3].end()
+            if mor[2].end() < mor[3].start():
+                contig_breakpoint = (mor[2].end() + 1, mor[3].start())
+            elif mor[3].end() < mor[2].start():
+                contig_breakpoint = (mor[3].end() + 1, mor[2].start())
             else:
-                logger.info("      Found weird extensive moc: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
+                logger.error("      Found weird extensive moc: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
             if mor[2].contig != mor[3].contig:
-                logger.info("      Found extensive moc with differing contig: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
+                logger.error("      Found extensive moc with differing contig: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
 
             start_ref = mor[2].ref
             if mor[2].pos_strand():
@@ -585,4 +587,4 @@ def aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_r
     logger.info("      Unique extensive misassemblies: " + str(unique_extensive_breakpoints))
     #logger.info("      Misassemblies on reference:\n" + '\n'.join(['(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')' for mor in misassemblies_on_reference]))
 
-    return unique_extensive_breakpoints, unique_local_breakpoints
+    return unique_extensive_breakpoints, unique_local_breakpoints, local_contig_breakpoints, extensive_contig_breakpoints

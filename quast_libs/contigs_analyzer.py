@@ -353,6 +353,19 @@ def do(reference, contigs_fpaths, is_cyclic, output_dir, old_contigs_fpaths, bed
             save_result_for_unaligned(results[index], report)
 
     if AlignerStatus.OK in aligner_statuses.values():
+        all_breakpoints = {}
+        for result in results:
+            if "local_contig_breakpoints" in result:
+                for key, value in result["local_contig_breakpoints"].items():
+                    all_breakpoints.setdefault(key, []).append(value)
+            if "extensive_contig_breakpoints" in result:
+                for key, value in result["extensive_contig_breakpoints"].items():
+                    all_breakpoints.setdefault(key, []).append(value)
+
+        import json
+        with open(join(output_dir, 'contig_breakpoints.json'), 'w') as out_file:
+            out_file.write(json.dumps(all_breakpoints, sort_keys = True))
+
         reporting.save_misassemblies(output_dir)
         reporting.save_unaligned(output_dir)
         from . import plotter
