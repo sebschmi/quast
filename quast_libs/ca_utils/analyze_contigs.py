@@ -467,6 +467,7 @@ def aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_r
                 unresolvable_local_misassemblies.append(mor)
                 continue
 
+            contig_breakpoint = None
             if mor[2].end() + 1 == mor[3].start():
                 contig_breakpoint = mor[2].end()
             elif mor[3].end() + 1 == mor[2].start():
@@ -484,13 +485,15 @@ def aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_r
                 end = mor[2].s1
 
             local_breakpoints.setdefault(mor[2].ref, []).append((start, end))
-            local_contig_breakpoints.setdefault(mor[2].contig, []).append(contig_breakpoint)
+            if contig_breakpoint is not None:
+                local_contig_breakpoints.setdefault(mor[2].contig, []).append(contig_breakpoint)
         else:
             if mor[1] not in [Misassembly.RELOCATION, Misassembly.TRANSLOCATION, Misassembly.INVERSION]:
                 logger.info("      Non-standard extensive mor: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
                 unresolvable_extensive_misassemblies.append(mor)
                 continue
 
+            contig_breakpoint = None
             if mor[2].end() + 1 == mor[3].start():
                 contig_breakpoint = mor[2].end()
             elif mor[3].end() + 1 == mor[2].start():
@@ -523,7 +526,8 @@ def aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_r
             #logger.info("      Into: " + '(' + str(start_ref) + ", " + str(end_ref) + ", " + str(start_index) + ", " + str(end_index) + ')')
 
             extensive_breakpoints.setdefault((start_ref, end_ref), []).append((start_index, end_index))
-            extensive_contig_breakpoints.setdefault(mor[2].contig, []).append(contig_breakpoint)
+            if contig_breakpoint is not None:
+                extensive_contig_breakpoints.setdefault(mor[2].contig, []).append(contig_breakpoint)
 
     unique_local_breakpoints = len(unresolvable_local_misassemblies)
     for local_breakpoints in local_breakpoints.values():
