@@ -146,10 +146,10 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
 
     #print("computed e_size_max as " + str(e_size_max))
     logger.info("      Duplication ratio = %.2f = %d/%d" % ((alignment_total_length / covered_bases), alignment_total_length, covered_bases))
-    logger.info("      EA50max = %d" % e_size_max[50])
-    logger.info("      Strict EA50max = %d" % strict_e_size_max[50])
-    logger.info("      len2 NGA50 = %d" % N50.NG50_and_LG50([align.len2 for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0])
-    logger.info("      len2_excluding_local_misassemblies NGA50 = %d" % N50.NG50_and_LG50([align.len2_excluding_local_misassemblies for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0])
+    logger.info("      EA50max = {}".format(e_size_max[50]))
+    logger.info("      Strict EA50max = {}".format(strict_e_size_max[50]))
+    logger.info("      len2 NGA50 = {}".format(N50.NG50_and_LG50([align.len2 for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0]))
+    logger.info("      len2_excluding_local_misassemblies NGA50 = {}".format(N50.NG50_and_LG50([align.len2_excluding_local_misassemblies for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0]))
 
     return covered_bases, indels_info, e_size_max, strict_e_size_max
 
