@@ -136,12 +136,14 @@ def analyze_contigs(ca_output, contigs_fpath, unaligned_fpath, unaligned_info_fp
     unaligned_file = open(unaligned_fpath, 'w')
     unaligned_info_file = open(unaligned_info_fpath, 'w')
     unaligned_info_file.write('\t'.join(['Contig', 'Total_length', 'Unaligned_length', 'Unaligned_type', 'Unaligned_parts']) + '\n')
+    contig_lens = {}
     for contig, seq in fastaparser.read_fasta(contigs_fpath):
         #logger.info("      Processing contig " + str(contig) + " (len " + str(len(seq)) + ")")
         original_aligned_lengths = aligned_lengths.copy()
 
         #Recording contig stats
         ctg_len = len(seq)
+        contig_lens[contig] = ctg_len
         ca_output.stdout_f.write('CONTIG: %s (%dbp)\n' % (contig, ctg_len))
         contig_type = 'unaligned'
         misassemblies_in_contigs.append(0)
@@ -415,6 +417,36 @@ def analyze_contigs(ca_output, contigs_fpath, unaligned_fpath, unaligned_info_fp
 
     unique_extensive_misassemblies, unique_local_misassemblies, local_contig_breakpoints, extensive_contig_breakpoints = aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_reference)
 
+    contig_aligns = {}
+    for ref, aligns in ref_aligns.items():
+        print(ref)
+        for align in aligns:
+            print(align)
+            contig_aligns.setdefault(align.contig, []).append(align)
+
+    for contig_name, aligns in contig_aligns.items():
+        aligns.sort(key = lambda align: align.start())
+
+    for contig_name, contig_len in contig_lens.items():
+        aligns = contig_aligns.setdefault(contig_name, [])
+        is_aligned = [False] * contig_len
+        for align in aligns:
+            #print("Align {}, {}, len {}".format(align.start(), align.end(), contig_len))
+            for i in range(align.start(), align.end()):
+                is_aligned[i] = True
+
+        start = None
+        for i, is_aligned in enumerate(is_aligned):
+            if is_aligned and start is not None:
+                end = i
+                add_contig_breakpoint(local_contig_breakpoints.setdefault(contig_name, []), extensive_contig_breakpoints.setdefault(contig_name, []), start, end, contig_len)
+                start = None
+            elif not is_aligned and start is None:
+                start = i
+
+        if start is not None:
+            add_contig_breakpoint(local_contig_breakpoints.setdefault(contig_name, []), extensive_contig_breakpoints.setdefault(contig_name, []), start, contig_len, contig_len)
+
     result = {'region_misassemblies': region_misassemblies,
               'region_struct_variations': region_struct_variations.get_count() if region_struct_variations else None,
               'misassembled_contigs': misassembled_contigs, 'misassembled_bases': misassembled_bases,
@@ -471,9 +503,9 @@ def aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_r
 
             contig_breakpoint = None
             if mor[2].end() < mor[3].start():
-                contig_breakpoint = (mor[2].end() + 1, mor[3].start())
+                contig_breakpoint = (mor[2].end(), mor[3].start())
             elif mor[3].end() < mor[2].start():
-                contig_breakpoint = (mor[3].end() + 1, mor[2].start())
+                contig_breakpoint = (mor[3].end(), mor[2].start())
             else:
                 logger.error("      Found weird local moc: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
             if mor[2].contig != mor[3].contig:
@@ -497,9 +529,9 @@ def aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_r
 
             contig_breakpoint = None
             if mor[2].end() < mor[3].start():
-                contig_breakpoint = (mor[2].end() + 1, mor[3].start())
+                contig_breakpoint = (mor[2].end(), mor[3].start())
             elif mor[3].end() < mor[2].start():
-                contig_breakpoint = (mor[3].end() + 1, mor[2].start())
+                contig_breakpoint = (mor[3].end(), mor[2].start())
             else:
                 logger.error("      Found weird extensive moc: " + '(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')')
             if mor[2].contig != mor[3].contig:
@@ -587,4 +619,37 @@ def aggregate_misassemblies(misassemblies_on_reference, local_misassemblies_on_r
     logger.info("      Unique extensive misassemblies: " + str(unique_extensive_breakpoints))
     #logger.info("      Misassemblies on reference:\n" + '\n'.join(['(' + str(mor[0]) + ", " + str(mor[1]) + ", " + str(mor[2]) + ", " + str(mor[3]) + ')' for mor in misassemblies_on_reference]))
 
+    for bps in local_contig_breakpoints.values():
+        bps.sort()
+    for bps in extensive_contig_breakpoints.values():
+        bps.sort()
     return unique_extensive_breakpoints, unique_local_breakpoints, local_contig_breakpoints, extensive_contig_breakpoints
+
+def add_contig_breakpoint(local_contig_breakpoints, extensive_contig_breakpoints, start, end, contig_len):
+    #logger.info("      add_contig_breakpoint(local_contig_breakpoints: {}, extensive_contig_breakpoints: {}, start: {}, end: {})".format(local_contig_breakpoints, extensive_contig_breakpoints, start, end))
+    for local_start, local_end in local_contig_breakpoints:
+        if local_start <= end and start <= local_end:
+            if not local_start <= start and end <= local_end:
+                logger.error("      Found weird overlap between local breakpoint and unaligned part: loc(%d, %d), unal(%d, %d)" % (local_start, local_end, start, end))
+            else:
+                #logger.info("      Unaligned part is subinterval of local breakpoint: loc(%d, %d), unal(%d, %d)" % (local_start, local_end, start, end))
+                return
+
+    for extensive_start, extensive_end in extensive_contig_breakpoints:
+        if extensive_start <= end and start <= extensive_end:
+            if not extensive_start <= start and end <= extensive_end:
+                logger.error("      Found weird overlap between extensive breakpoint and unaligned part: ext(%d, %d), unal(%d, %d)" % (extensive_start, extensive_end, start, end))
+            else:
+                #logger.info("      Unaligned part is subinterval of extensive breakpoint: loc(%d, %d), unal(%d, %d)" % (extensive_start, extensive_end, start, end))
+                return
+
+    
+    if end - start < qconfig.MAX_INDEL_LENGTH:
+        return
+
+    if start != 0 and end != contig_len:
+        logger.info("      Skipping unaligned part as it is not prefix or suffix of contig: unal(%d, %d), len: %d" % (start, end, end - start))
+
+    logger.info("      Adding unaligned part as extensive breakpoint: unal(%d, %d), len: %d" % (start, end, end - start))
+    extensive_contig_breakpoints.append((start, end))
+    extensive_contig_breakpoints.sort()
