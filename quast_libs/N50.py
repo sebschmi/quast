@@ -73,3 +73,11 @@ def NG50_and_LG50(numlist, reference_length, percentage=50.0, need_sort=False):
 
 def N50_and_L50(numlist, percentage = 50.0):
     return NG50_and_LG50(numlist, sum(numlist), percentage)
+
+def E_size(numlist):
+    G = 0
+    E_size = 0
+    for num in numlist:
+        E_size += num * num
+        G += num
+    return int(E_size / G)

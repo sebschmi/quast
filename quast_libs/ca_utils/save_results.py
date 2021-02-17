@@ -67,10 +67,12 @@ def print_results(contigs_fpath, log_out_f, used_snps_fpath, total_indels_info, 
 
     log_out_f.write('\n')
     log_out_f.write('\tCovered Bases: %d\n' % result['total_aligned_bases'])
-    log_out_f.write('\tEA50max: %s\n' % str(result['e_size_max'][50]))
-    log_out_f.write('\tEA75max: %s\n' % str(result['e_size_max'][75]))
-    log_out_f.write('\tStrict EA50max: %s\n' % str(result['strict_e_size_max'][50]))
-    log_out_f.write('\tStrict EA75max: %s\n' % str(result['strict_e_size_max'][75]))
+    log_out_f.write('\tEAmeanmax: %s\n' % str(result['ea_mean_max']))
+    log_out_f.write('\tStrict EAmeanmax: %s\n' % str(result['strict_ea_mean_max']))
+    log_out_f.write('\tEA50max: %s\n' % str(result['ea_x_max'][50]))
+    log_out_f.write('\tEA75max: %s\n' % str(result['ea_x_max'][75]))
+    log_out_f.write('\tStrict EA50max: %s\n' % str(result['strict_ea_x_max'][50]))
+    log_out_f.write('\tStrict EA75max: %s\n' % str(result['strict_ea_x_max'][75]))
     log_out_f.write('\n')
     log_out_f.write('\tSNPs: %d\n' % total_indels_info.mismatches)
     log_out_f.write('\tInsertions: %d\n' % total_indels_info.insertions)
@@ -95,11 +97,13 @@ def save_result(result, report, fname, ref_fpath, genome_size, aligned_lengths):
     SNPs = result['SNPs']
     indels_list = result['indels_list']
     total_aligned_bases = result['total_aligned_bases']
-    ea50max = result['e_size_max'][50]
-    ea75max = result['e_size_max'][75]
-    strict_ea50max = result['strict_e_size_max'][50]
-    strict_ea75max = result['strict_e_size_max'][75]
-    e_size_max = result['e_size_max']
+    ea_mean_max = result['ea_mean_max']
+    strict_ea_mean_max = result['strict_ea_mean_max']
+    ea50max = result['ea_x_max'][50]
+    ea75max = result['ea_x_max'][75]
+    strict_ea50max = result['strict_ea_x_max'][50]
+    strict_ea75max = result['strict_ea_x_max'][75]
+    ea_x_max = result['ea_x_max']
     half_unaligned_with_misassembly = result['half_unaligned_with_misassembly']
 
     report.add_field(reporting.Fields.MISLOCAL, region_misassemblies.count(Misassembly.LOCAL))
@@ -137,13 +141,23 @@ def save_result(result, report, fname, ref_fpath, genome_size, aligned_lengths):
         report.add_field(reporting.Fields.SUBSERROR, "%.2f" % (float(SNPs) * 100000.0 / float(total_aligned_length)))
         report.add_field(reporting.Fields.INDELSERROR, "%.2f" % (float(report.get_field(reporting.Fields.INDELS))
                                                                  * 100000.0 / float(total_aligned_length)))
+        report.add_field(reporting.Fields.EAMEANMAX, str(ea_mean_max))
+        report.add_field(reporting.Fields.STRICT_EAMEANMAX, str(strict_ea_mean_max))
         report.add_field(reporting.Fields.EA50MAX, str(ea50max))
         report.add_field(reporting.Fields.EA75MAX, str(ea75max))
         report.add_field(reporting.Fields.STRICT_EA50MAX, str(strict_ea50max))
         report.add_field(reporting.Fields.STRICT_EA75MAX, str(strict_ea75max))
-        report.add_field(reporting.Fields.E_SIZE_MAX, str(e_size_max))
+        report.add_field(reporting.Fields.E_SIZE_MAX, str(ea_x_max))
         report.add_field(reporting.Fields.UNIQUE_EXTENSIVE_MISASSEMBLIES, str(result['unique_extensive_misassemblies']))
         report.add_field(reporting.Fields.UNIQUE_LOCAL_MISASSEMBLIES, str(result['unique_local_misassemblies']))
+        report.add_field(reporting.Fields.P5K, "%.3f" % result['p5k'])
+        report.add_field(reporting.Fields.P10K, "%.3f" % result['p10k'])
+        report.add_field(reporting.Fields.P15K, "%.3f" % result['p15k'])
+        report.add_field(reporting.Fields.P20K, "%.3f" % result['p20k'])
+        report.add_field(reporting.Fields.STRICT_P5K, "%.3f" % result['strict_p5k'])
+        report.add_field(reporting.Fields.STRICT_P10K, "%.3f" % result['strict_p10k'])
+        report.add_field(reporting.Fields.STRICT_P15K, "%.3f" % result['strict_p15k'])
+        report.add_field(reporting.Fields.STRICT_P20K, "%.3f" % result['strict_p20k'])
 
     # for misassemblies report:
     report.add_field(reporting.Fields.MIS_ALL_EXTENSIVE, region_misassemblies.count(Misassembly.RELOCATION) +

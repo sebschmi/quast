@@ -51,6 +51,17 @@ class CAOutput():
 
 from pprint import pprint
 
+def filter_count(list, filter):
+    count = 0
+    for item in list:
+        if filter(item):
+            count += 1
+    return count
+
+def P(list, minimum):
+    print("      Computing P{}".format(minimum))
+    return filter_count(list, lambda x: x >= minimum) / len(list)
+
 def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_snps_fpath):
     logger.info("    Enter analyze_coverage")
     #logger.info(f"    {ref_aligns=}")
@@ -132,26 +143,36 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
 
     maximum_contig_align_size_per_ref_base = [align_size for contig in maximum_contig_align_size_per_ref_base.values() for align_size in contig]
     maximum_contig_align_size_per_ref_base.sort(reverse=True)
-    e_size_max = [0] * 101
+    ea_x_max = [0] * 101
     for i in range(0, 100):
-        e_size_max[i] = maximum_contig_align_size_per_ref_base[(len(maximum_contig_align_size_per_ref_base) * i) // 100]
-    e_size_max[100] = maximum_contig_align_size_per_ref_base[-1]
+        ea_x_max[i] = maximum_contig_align_size_per_ref_base[(len(maximum_contig_align_size_per_ref_base) * i) // 100]
+    ea_x_max[100] = maximum_contig_align_size_per_ref_base[-1]
+    ea_mean_max = int(sum(maximum_contig_align_size_per_ref_base) / len(maximum_contig_align_size_per_ref_base))
+    p5k = P(maximum_contig_align_size_per_ref_base, 5000)
+    p10k = P(maximum_contig_align_size_per_ref_base, 10000)
+    p15k = P(maximum_contig_align_size_per_ref_base, 15000)
+    p20k = P(maximum_contig_align_size_per_ref_base, 20000)
 
     strict_maximum_contig_align_size_per_ref_base = [align_size for contig in strict_maximum_contig_align_size_per_ref_base.values() for align_size in contig]
     strict_maximum_contig_align_size_per_ref_base.sort(reverse=True)
-    strict_e_size_max = [0] * 101
+    strict_ea_x_max = [0] * 101
     for i in range(0, 100):
-        strict_e_size_max[i] = strict_maximum_contig_align_size_per_ref_base[(len(strict_maximum_contig_align_size_per_ref_base) * i) // 100]
-    strict_e_size_max[100] = strict_maximum_contig_align_size_per_ref_base[-1]
+        strict_ea_x_max[i] = strict_maximum_contig_align_size_per_ref_base[(len(strict_maximum_contig_align_size_per_ref_base) * i) // 100]
+    strict_ea_x_max[100] = strict_maximum_contig_align_size_per_ref_base[-1]
+    strict_ea_mean_max = int(sum(strict_maximum_contig_align_size_per_ref_base) / len(strict_maximum_contig_align_size_per_ref_base))
+    strict_p5k = P(strict_maximum_contig_align_size_per_ref_base, 5000)
+    strict_p10k = P(strict_maximum_contig_align_size_per_ref_base, 10000)
+    strict_p15k = P(strict_maximum_contig_align_size_per_ref_base, 15000)
+    strict_p20k = P(strict_maximum_contig_align_size_per_ref_base, 20000)
 
-    #print("computed e_size_max as " + str(e_size_max))
+    #print("computed ea_x_max as " + str(ea_x_max))
     logger.info("      Duplication ratio = %.2f = %d/%d" % ((alignment_total_length / covered_bases), alignment_total_length, covered_bases))
-    logger.info("      EA50max = {}".format(e_size_max[50]))
-    logger.info("      Strict EA50max = {}".format(strict_e_size_max[50]))
+    logger.info("      EA50max = {}".format(ea_x_max[50]))
+    logger.info("      Strict EA50max = {}".format(strict_ea_x_max[50]))
     logger.info("      len2 NGA50 = {}".format(N50.NG50_and_LG50([align.len2 for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0]))
     logger.info("      len2_excluding_local_misassemblies NGA50 = {}".format(N50.NG50_and_LG50([align.len2_excluding_local_misassemblies for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0]))
 
-    return covered_bases, indels_info, e_size_max, strict_e_size_max
+    return covered_bases, indels_info, ea_x_max, strict_ea_x_max, ea_mean_max, strict_ea_mean_max, p5k, p10k, p15k, p20k, strict_p5k, strict_p10k, strict_p15k, strict_p20k
 
 # former plantagora and plantakolya
 def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath,
@@ -261,9 +282,26 @@ def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath
     log_out_f.write('Analyzing coverage...\n')
     if qconfig.show_snps:
         log_out_f.write('Writing SNPs into ' + used_snps_fpath + '\n')
-    total_aligned_bases, indels_info, e_size_max, strict_e_size_max = analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_snps_fpath)
+    total_aligned_bases, indels_info, ea_x_max, strict_ea_x_max, ea_mean_max, strict_ea_mean_max, p5k, p10k, p15k, p20k, strict_p5k, strict_p10k, strict_p15k, strict_p20k =\
+        analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_snps_fpath)
     total_indels_info += indels_info
-    cov_stats = {'SNPs': total_indels_info.mismatches, 'indels_list': total_indels_info.indels_list, 'total_aligned_bases': total_aligned_bases, 'e_size_max': e_size_max, 'strict_e_size_max': strict_e_size_max}
+    cov_stats = {
+        'SNPs': total_indels_info.mismatches,
+        'indels_list': total_indels_info.indels_list,
+        'total_aligned_bases': total_aligned_bases,
+        'ea_x_max': ea_x_max,
+        'strict_ea_x_max': strict_ea_x_max,
+        'ea_mean_max': ea_mean_max,
+        'strict_ea_mean_max': strict_ea_mean_max,
+        'p5k': p5k,
+        'p10k': p10k,
+        'p15k': p15k,
+        'p20k': p20k,
+        'strict_p5k': strict_p5k,
+        'strict_p10k': strict_p10k,
+        'strict_p15k': strict_p15k,
+        'strict_p20k': strict_p20k,
+    }
     result.update(cov_stats)
     result = print_results(contigs_fpath, log_out_f, used_snps_fpath, total_indels_info, result)
 

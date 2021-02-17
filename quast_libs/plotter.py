@@ -409,26 +409,26 @@ def Nx_plot(results_dir, reduce_points, contigs_fpaths, lists_of_lengths, plot_f
     create_plot(plot_fpath, title, plots, legend_list, x_label='x', y_label='Contig length', x_limit=[0, 100])
 
 # plot the e-size with max aggregation (EAxmax) over different genome fractions
-def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, e_size_max):
+def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, ea_x_max):
     if can_draw_plots:
         logger.info('  Drawing ' + title + ' plot...')
 
-    e_size_max = eval(e_size_max)
+    ea_x_max = eval(ea_x_max)
 
     plots = []
     json_vals_x = []  # coordinates for Nx-like plots in HTML-report
     json_vals_y = []
 
     vals_x = [0.0]
-    vals_y = [float(e_size_max[0])]
+    vals_y = [float(ea_x_max[0])]
     # calculate values for the plot
     vals_px = [0.0]
-    vals_py = [float(e_size_max[0])]
+    vals_py = [float(ea_x_max[0])]
 
     min_difference = 0
     if reduce_points:
         min_difference = qconfig.min_difference
-    for x, eax in enumerate(e_size_max):
+    for x, eax in enumerate(ea_x_max):
         eax = float(eax)
         if can_draw_plots:
             vals_px.append(vals_px[-1] + 1e-2) # eps
