@@ -887,8 +887,6 @@ def compile_tool(name, dirpath, requirements, just_notice=False, logger=logger, 
 def check_dirpath(path, message="", exit_code=3):
     if not is_ascii_string(path):
         logger.error('QUAST does not support non-ASCII characters in path.\n' + message, to_stderr=True, exit_with_code=exit_code)
-    if ' ' in path:
-        logger.error('QUAST does not support spaces in paths.\n' + message, to_stderr=True, exit_with_code=exit_code)
     return True
 
 
