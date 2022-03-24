@@ -73,6 +73,9 @@ def print_results(contigs_fpath, log_out_f, used_snps_fpath, total_indels_info, 
     log_out_f.write('\tEA75max: %s\n' % str(result['ea_x_max'][75]))
     log_out_f.write('\tStrict EA50max: %s\n' % str(result['strict_ea_x_max'][50]))
     log_out_f.write('\tStrict EA75max: %s\n' % str(result['strict_ea_x_max'][75]))
+    log_out_f.write('\tEmeanmax: %s\n' % str(result['e_mean_max']))
+    log_out_f.write('\tE50max: %s\n' % str(result['e_x_max'][50]))
+    log_out_f.write('\tE75max: %s\n' % str(result['e_x_max'][75]))
     log_out_f.write('\n')
     log_out_f.write('\tSNPs: %d\n' % total_indels_info.mismatches)
     log_out_f.write('\tInsertions: %d\n' % total_indels_info.insertions)
@@ -104,6 +107,10 @@ def save_result(result, report, fname, ref_fpath, genome_size, aligned_lengths):
     strict_ea50max = result['strict_ea_x_max'][50]
     strict_ea75max = result['strict_ea_x_max'][75]
     ea_x_max = result['ea_x_max']
+    e_mean_max = result['e_mean_max']
+    e50max = result['e_x_max'][50]
+    e75max = result['e_x_max'][75]
+    e_x_max = result['e_x_max']
     half_unaligned_with_misassembly = result['half_unaligned_with_misassembly']
 
     report.add_field(reporting.Fields.MISLOCAL, region_misassemblies.count(Misassembly.LOCAL))
@@ -147,7 +154,11 @@ def save_result(result, report, fname, ref_fpath, genome_size, aligned_lengths):
         report.add_field(reporting.Fields.EA75MAX, str(ea75max))
         report.add_field(reporting.Fields.STRICT_EA50MAX, str(strict_ea50max))
         report.add_field(reporting.Fields.STRICT_EA75MAX, str(strict_ea75max))
-        report.add_field(reporting.Fields.E_SIZE_MAX, str(ea_x_max))
+        report.add_field(reporting.Fields.EA_SIZE_MAX, str(ea_x_max))
+        report.add_field(reporting.Fields.EMEANMAX, str(e_mean_max))
+        report.add_field(reporting.Fields.E50MAX, str(e50max))
+        report.add_field(reporting.Fields.E75MAX, str(e75max))
+        report.add_field(reporting.Fields.E_SIZE_MAX, str(e_x_max))
         report.add_field(reporting.Fields.UNIQUE_EXTENSIVE_MISASSEMBLIES, str(result['unique_extensive_misassemblies']))
         report.add_field(reporting.Fields.UNIQUE_LOCAL_MISASSEMBLIES, str(result['unique_local_misassemblies']))
         report.add_field(reporting.Fields.P5K, "%.3f" % result['p5k'])

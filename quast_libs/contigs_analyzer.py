@@ -62,18 +62,20 @@ def P(list, minimum):
     print("      Computing P{}".format(minimum))
     return filter_count(list, lambda x: x >= minimum) / len(list)
 
-def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_snps_fpath):
+def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_snps_fpath, contig_length_map=None):
     logger.info("    Enter analyze_coverage")
     #logger.info(f"    {ref_aligns=}")
     indels_info = IndelsInfo()
     maximum_contig_align_size_per_ref_base = {}
     strict_maximum_contig_align_size_per_ref_base = {}
+    maximum_contig_length_per_ref_base = {}
     genome_mapping = {}
     genome_length = 0
     for chr_name, chr_len in reference_chromosomes.items():
         genome_mapping[chr_name] = [0] * (chr_len + 1)
         maximum_contig_align_size_per_ref_base[chr_name] = [0] * (chr_len + 1)
         strict_maximum_contig_align_size_per_ref_base[chr_name] = [0] * (chr_len + 1)
+        maximum_contig_length_per_ref_base[chr_name] = [0] * (chr_len + 1)
         genome_length += chr_len
     logger.info("      Genome length: " + str(genome_length))
 
@@ -116,28 +118,35 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
                         ctg_pos += n_bases * strand_direction
 
                 alignment_total_length += align.len2_excluding_local_misassemblies
+                align_size = align.len2_excluding_local_misassemblies # Use the same len that is used to compute NGAx
+                strict_align_size = align.len2_including_local_misassemblies # Use the same len that is used to strict compute NGAx
+                if contig_length_map is not None:
+                    contig_length = contig_length_map[align.contig]
+                else:
+                    contig_length = 0
+
                 if align.s1 < align.e1:
-                    align_size = align.len2_excluding_local_misassemblies # Use the same len that is used to compute NGAx
-                    strict_align_size = align.len2_including_local_misassemblies # Use the same len that is used to strict compute NGAx
                     for pos in range(align.s1, align.e1 + 1):
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
                         strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])
+                        maximum_contig_length_per_ref_base[align.ref][pos] = max(contig_length, maximum_contig_length_per_ref_base[align.ref][pos])
                 else:
-                    align_size = align.len2_excluding_local_misassemblies # Use the same len that is used to compute NGAx
-                    strict_align_size = align.len2_including_local_misassemblies # Use the same len that is used to strict compute NGAx
                     for pos in range(align.s1, len(genome_mapping[align.ref])):
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
                         strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])
+                        maximum_contig_length_per_ref_base[align.ref][pos] = max(contig_length, maximum_contig_length_per_ref_base[align.ref][pos])
                     for pos in range(1, align.e1 + 1):
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
                         strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])
+                        maximum_contig_length_per_ref_base[align.ref][pos] = max(contig_length, maximum_contig_length_per_ref_base[align.ref][pos])
             for i in ns_by_chromosomes[align.ref]:
                 genome_mapping[align.ref][i] = 0
                 maximum_contig_align_size_per_ref_base[align.ref][pos] = 0
                 strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = 0
+                maximum_contig_length_per_ref_base[align.ref][pos] = 0
 
     covered_bases = sum([sum(genome_mapping[chrom]) for chrom in genome_mapping])
 
@@ -165,18 +174,27 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
     strict_p15k = P(strict_maximum_contig_align_size_per_ref_base, 15000)
     strict_p20k = P(strict_maximum_contig_align_size_per_ref_base, 20000)
 
+    maximum_contig_length_per_ref_base = [length for contig in maximum_contig_length_per_ref_base.values() for length in contig]
+    maximum_contig_length_per_ref_base.sort(reverse=True)
+    e_x_max = [0] * 101
+    for i in range(0, 100):
+        e_x_max[i] = maximum_contig_length_per_ref_base[(len(maximum_contig_length_per_ref_base) * i) // 100]
+    e_x_max[100] = maximum_contig_length_per_ref_base[-1]
+    e_mean_max = int(sum(maximum_contig_length_per_ref_base) / len(maximum_contig_length_per_ref_base))
+
     #print("computed ea_x_max as " + str(ea_x_max))
     logger.info("      Duplication ratio = %.2f = %d/%d" % ((alignment_total_length / covered_bases), alignment_total_length, covered_bases))
     logger.info("      EA50max = {}".format(ea_x_max[50]))
     logger.info("      Strict EA50max = {}".format(strict_ea_x_max[50]))
+    logger.info("      E50max = {}".format(e_x_max[50]))
     logger.info("      len2 NGA50 = {}".format(N50.NG50_and_LG50([align.len2 for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0]))
     logger.info("      len2_excluding_local_misassemblies NGA50 = {}".format(N50.NG50_and_LG50([align.len2_excluding_local_misassemblies for aligns in ref_aligns.values() for align in aligns], genome_length, need_sort=True)[0]))
 
-    return covered_bases, indels_info, ea_x_max, strict_ea_x_max, ea_mean_max, strict_ea_mean_max, p5k, p10k, p15k, p20k, strict_p5k, strict_p10k, strict_p15k, strict_p20k
+    return covered_bases, indels_info, ea_x_max, strict_ea_x_max, ea_mean_max, strict_ea_mean_max, p5k, p10k, p15k, p20k, strict_p5k, strict_p10k, strict_p15k, strict_p20k, e_x_max, e_mean_max
 
 # former plantagora and plantakolya
 def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath,
-                      reference_chromosomes, ns_by_chromosomes, old_contigs_fpath, bed_fpath, threads=1):
+                      reference_chromosomes, ns_by_chromosomes, old_contigs_fpath, bed_fpath, threads=1, contig_length_map=None):
     logger.info('  Running align_and_analyze with ' + str(threads) + ' threads')
     #logger.info(f"  {is_cyclic=}\n  {index=}\n  {contigs_fpath=}\n  {output_dirpath=}\n  {ref_fpath=}\n  {reference_chromosomes=}\n  {ns_by_chromosomes=}\n  {old_contigs_fpath=}\n  {bed_fpath=}\n  {threads=}")
 
@@ -282,8 +300,8 @@ def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath
     log_out_f.write('Analyzing coverage...\n')
     if qconfig.show_snps:
         log_out_f.write('Writing SNPs into ' + used_snps_fpath + '\n')
-    total_aligned_bases, indels_info, ea_x_max, strict_ea_x_max, ea_mean_max, strict_ea_mean_max, p5k, p10k, p15k, p20k, strict_p5k, strict_p10k, strict_p15k, strict_p20k =\
-        analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_snps_fpath)
+    total_aligned_bases, indels_info, ea_x_max, strict_ea_x_max, ea_mean_max, strict_ea_mean_max, p5k, p10k, p15k, p20k, strict_p5k, strict_p10k, strict_p15k, strict_p20k, e_x_max, e_mean_max =\
+        analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_snps_fpath, contig_length_map)
     total_indels_info += indels_info
     cov_stats = {
         'SNPs': total_indels_info.mismatches,
@@ -301,6 +319,8 @@ def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath
         'strict_p10k': strict_p10k,
         'strict_p15k': strict_p15k,
         'strict_p20k': strict_p20k,
+        'e_x_max': ea_x_max,
+        'e_mean_max': e_mean_max,
     }
     result.update(cov_stats)
     result = print_results(contigs_fpath, log_out_f, used_snps_fpath, total_indels_info, result)
@@ -350,7 +370,7 @@ def align_and_analyze(is_cyclic, index, contigs_fpath, output_dirpath, ref_fpath
         return AlignerStatus.OK, result, aligned_lengths, misassemblies_in_contigs, aligned_lengths_by_contigs
 
 
-def do(reference, contigs_fpaths, is_cyclic, output_dir, old_contigs_fpaths, bed_fpath=None):
+def do(reference, contigs_fpaths, is_cyclic, output_dir, old_contigs_fpaths, bed_fpath=None, contig_length_map=None):
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
 
@@ -369,7 +389,7 @@ def do(reference, contigs_fpaths, is_cyclic, output_dir, old_contigs_fpaths, bed
     genome_size, reference_chromosomes, ns_by_chromosomes = get_genome_stats(reference, skip_ns=True)
     threads = qconfig.max_threads if qconfig.memory_efficient else threads
     args = [(is_cyclic, i, contigs_fpath, output_dir, reference, reference_chromosomes, ns_by_chromosomes,
-            old_contigs_fpath, bed_fpath, threads)
+            old_contigs_fpath, bed_fpath, threads, contig_length_map)
             for i, (contigs_fpath, old_contigs_fpath) in enumerate(zip(contigs_fpaths, old_contigs_fpaths))]
     statuses, results, aligned_lengths, misassemblies_in_contigs, aligned_lengths_by_contigs = run_parallel(align_and_analyze, args, n_jobs)
     reports = []

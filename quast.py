@@ -146,7 +146,7 @@ def main(args):
     ### Stats and plots
     ########################################################################
     from quast_libs import basic_stats
-    icarus_gc_fpath, circos_gc_fpath = basic_stats.do(ref_fpath, contigs_fpaths, os.path.join(output_dirpath, 'basic_stats'), output_dirpath)
+    icarus_gc_fpath, circos_gc_fpath, contig_length_map = basic_stats.do(ref_fpath, contigs_fpaths, os.path.join(output_dirpath, 'basic_stats'), output_dirpath)
 
     if qconfig.use_kmc and ref_fpath:
         unique_kmers.do(os.path.join(output_dirpath, 'k_mer_stats'), ref_fpath, contigs_fpaths, logger)
@@ -166,7 +166,7 @@ def main(args):
         is_cyclic = qconfig.prokaryote and not qconfig.check_for_fragmented_ref
         aligner_statuses, aligned_lengths_per_fpath = contigs_analyzer.do(
             ref_fpath, contigs_fpaths, is_cyclic, os.path.join(output_dirpath, 'contigs_reports'),
-            old_contigs_fpaths, qconfig.bed)
+            old_contigs_fpaths, qconfig.bed, contig_length_map=contig_length_map)
         for contigs_fpath in contigs_fpaths:
             if aligner_statuses[contigs_fpath] == contigs_analyzer.AlignerStatus.OK:
                 aligned_contigs_fpaths.append(contigs_fpath)

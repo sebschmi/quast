@@ -40,7 +40,6 @@ def do(ref_fpath, contigs_fpaths, aligned_contigs_fpaths, output_dirpath,
         sorted_lengths = sorted(lens, reverse=True)
         na50, la50 = N50.NG50_and_LG50(sorted_lengths, assembly_len)
         na75, la75 = N50.NG50_and_LG50(sorted_lengths, assembly_len, 75)
-        ea_size = N50.E_size(sorted_lengths)
         if not qconfig.is_combined_ref:
             nga50, lga50 = N50.NG50_and_LG50(sorted_lengths, reference_length)
             nga75, lga75 = N50.NG50_and_LG50(sorted_lengths, reference_length, 75)
@@ -60,7 +59,6 @@ def do(ref_fpath, contigs_fpaths, aligned_contigs_fpaths, output_dirpath,
         report.add_field(reporting.Fields.NA75, na75)
         report.add_field(reporting.Fields.LA50, la50)
         report.add_field(reporting.Fields.LA75, la75)
-        report.add_field(reporting.Fields.EA_SIZE, ea_size)
         if not qconfig.is_combined_ref:
             report.add_field(reporting.Fields.NGA50, nga50)
             report.add_field(reporting.Fields.NGA75, nga75)
@@ -85,8 +83,10 @@ def do(ref_fpath, contigs_fpaths, aligned_contigs_fpaths, output_dirpath,
     logger.info("Making plots...")
     plotter.Nx_plot(output_dirpath, num_contigs > qconfig.max_points, aligned_contigs_fpaths, aligned_lengths_lists, aligned_stats_dirpath + '/NAx_plot', 'NAx',
                     assembly_lengths)
-    ea_x_max = reporting.get(aligned_contigs_fpaths[0]).get_field(reporting.Fields.E_SIZE_MAX)
-    plotter.EAxmax_plot(output_dirpath, False, aligned_contigs_fpaths, aligned_stats_dirpath + '/EAxmax_plot', 'EAxmax', ea_x_max)
+    ea_x_max = reporting.get(aligned_contigs_fpaths[0]).get_field(reporting.Fields.EA_SIZE_MAX)
+    plotter.quantile_plot(output_dirpath, False, aligned_contigs_fpaths, aligned_stats_dirpath + '/EAxmax_plot', 'EAxmax', "EAxmax", ea_x_max)
+    e_x_max = reporting.get(aligned_contigs_fpaths[0]).get_field(reporting.Fields.E_SIZE_MAX)
+    plotter.quantile_plot(output_dirpath, False, aligned_contigs_fpaths, aligned_stats_dirpath + '/Exmax_plot', 'Exmax', "Exmax", e_x_max)
     if not qconfig.is_combined_ref:
         plotter.Nx_plot(output_dirpath, num_contigs > qconfig.max_points, aligned_contigs_fpaths, aligned_lengths_lists,
                         aligned_stats_dirpath + '/NGAx_plot', 'NGAx', [reference_length for i in range(len(aligned_contigs_fpaths))])

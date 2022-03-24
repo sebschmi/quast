@@ -408,38 +408,39 @@ def Nx_plot(results_dir, reduce_points, contigs_fpaths, lists_of_lengths, plot_f
     legend_list = [label_from_fpath(fpath) for fpath in contigs_fpaths]
     create_plot(plot_fpath, title, plots, legend_list, x_label='x', y_label='Contig length', x_limit=[0, 100])
 
-# plot the e-size with max aggregation (EAxmax) over different genome fractions
-def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, ea_x_max):
+
+# plot a quantile-based metric over different genome fractions
+def quantile_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, quantile_label, quantiles):
     if can_draw_plots:
         logger.info('  Drawing ' + title + ' plot...')
 
-    ea_x_max = eval(ea_x_max)
+    quantiles = eval(quantiles)
 
     plots = []
     json_vals_x = []  # coordinates for Nx-like plots in HTML-report
     json_vals_y = []
 
     vals_x = [0.0]
-    vals_y = [float(ea_x_max[0])]
+    vals_y = [float(quantiles[0])]
     # calculate values for the plot
     vals_px = [0.0]
-    vals_py = [float(ea_x_max[0])]
+    vals_py = [float(quantiles[0])]
 
     min_difference = 0
     if reduce_points:
         min_difference = qconfig.min_difference
-    for x, eax in enumerate(ea_x_max):
-        eax = float(eax)
+    for x, quantile in enumerate(quantiles):
+        quantile = float(quantile)
         if can_draw_plots:
             vals_px.append(vals_px[-1] + 1e-2) # eps
-            vals_py.append(eax)
+            vals_py.append(quantile)
             vals_px.append(x)
-            vals_py.append(eax)
-        if vals_y[-1] - eax > min_difference or len(vals_x) == 1:
+            vals_py.append(quantile)
+        if vals_y[-1] - quantile > min_difference or len(vals_x) == 1:
             vals_x.append(vals_x[-1] + 1e-2) # eps
-            vals_y.append(eax)
+            vals_y.append(quantile)
             vals_x.append(x)
-            vals_y.append(eax)
+            vals_y.append(quantile)
         # add to plot
         json_vals_x.append(vals_x)
         json_vals_y.append(vals_y)
@@ -466,7 +467,7 @@ def EAxmax_plot(results_dir, reduce_points, contigs_fpaths, plot_fpath, title, e
         return
 
     legend_list = [label_from_fpath(fpath) for fpath in contigs_fpaths]
-    create_plot(plot_fpath, title, plots, legend_list, x_label='x', y_label='EAxmax', x_limit=[0, 100])
+    create_plot(plot_fpath, title, plots, legend_list, x_label='x', y_label=quantile_label, x_limit=[0, 100])
 
 
 # routine for GC-plot

@@ -209,6 +209,7 @@ def do(ref_fpath, contigs_fpaths, output_dirpath, results_dir):
 
     logger.info('  Contig files: ')
     lists_of_lengths = []
+    contig_length_map = {}
     numbers_of_Ns = []
     coverage_dict = dict()
     cov_pattern = re.compile(r'_cov_(\d+\.?\d*)')
@@ -221,6 +222,9 @@ def do(ref_fpath, contigs_fpaths, output_dirpath, results_dir):
         list_of_length = []
         number_of_Ns = 0
         for (name, seq) in fastaparser.read_fasta(contigs_fpath):
+            assert name not in contig_length_map, f"Duplicate contig name: {name}"
+            contig_length_map[name] = len(seq)
+
             list_of_length.append(len(seq))
             number_of_Ns += seq.count('N')
             if cov_pattern.findall(name):
@@ -274,7 +278,6 @@ def do(ref_fpath, contigs_fpaths, output_dirpath, results_dir):
     for id, (contigs_fpath, lengths_list, number_of_Ns) in enumerate(zip(contigs_fpaths, lists_of_lengths, numbers_of_Ns)):
         report = reporting.get(contigs_fpath)
         n50, l50 = N50.N50_and_L50(lengths_list)
-        e_size = N50.E_size(lengths_list)
         ng50, lg50 = None, None
         if reference_length:
             ng50, lg50 = N50.NG50_and_LG50(lengths_list, reference_length)
@@ -296,7 +299,6 @@ def do(ref_fpath, contigs_fpaths, output_dirpath, results_dir):
         
         report.add_field(reporting.Fields.N50, n50)
         report.add_field(reporting.Fields.L50, l50)
-        report.add_field(reporting.Fields.E_SIZE, e_size)
         if reference_length and not qconfig.is_combined_ref:
             report.add_field(reporting.Fields.NG50, ng50)
             report.add_field(reporting.Fields.LG50, lg50)
@@ -358,4 +360,4 @@ def do(ref_fpath, contigs_fpaths, output_dirpath, results_dir):
             draw_coverage_histograms(coverage_dict, contigs_fpaths, output_dirpath)
 
     logger.main_info('Done.')
-    return icarus_gc_fpath, circos_gc_fpath
+    return icarus_gc_fpath, circos_gc_fpath, contig_length_map
