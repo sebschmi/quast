@@ -8,6 +8,7 @@
 from __future__ import with_statement
 
 import re
+import os
 from os.path import isfile
 import datetime
 
@@ -56,10 +57,46 @@ def run_minimap_agb(out_fpath, ref_fpath, contigs_fpath, log_err_fpath, index, m
                                          indent='  ' + qutils.index_to_str(index))
     return return_code
 
+def insert_suffix_into_filename_before_extension(path, suffix):
+    prefix, extension = os.path.splitext(path)
+    return prefix + suffix + extension
 
 def run_minimap(out_fpath, ref_fpath, contigs_fpath, log_err_fpath, index, max_threads):
     if qconfig.is_agb_mode:
         return run_minimap_agb(out_fpath, ref_fpath, contigs_fpath, log_err_fpath, index, max_threads)
+
+    # if qconfig.minimap_hoco:
+    #     assert qconfig.hoco_binary != ""
+    #     assert qconfig.hodeco_binary != ""
+
+    #     raw_out_fpath = out_fpath
+    #     raw_ref_fpath = ref_fpath
+    #     raw_contigs_fpath = contigs_fpath
+
+    #     out_fpath = insert_suffix_into_filename_before_extension(out_fpath, ".hoco")
+    #     ref_fpath = insert_suffix_into_filename_before_extension(ref_fpath, ".hoco")
+    #     contigs_fpath = insert_suffix_into_filename_before_extension(contigs_fpath, ".hoco")
+    #     logger.info(f"Using hoco. Original paths were\nraw_out_fpath: {raw_out_fpath}\nraw_ref_fpath: {raw_ref_fpath}\nraw_contigs_fpath: {raw_contigs_fpath}")
+
+    #     logger.info(f"Homopolymer compressing '{raw_ref_fpath}' into '{ref_fpath}'")
+    #     # hoco_log_fpath = ref_fpath + ".log"
+    #     # logger.info(f"Hoco log: {hoco_log_fpath}")
+    #     # hoco_log_file = open(hoco_log_fpath, 'a')
+    #     hoco_return_code = qutils.call_subprocess([qconfig.hoco_binary, raw_ref_fpath, ref_fpath])
+    #     if hoco_return_code != 0:
+    #         logger.info(f"Homopolymer compression returned code {hoco_return_code}")
+    #         return hoco_return_code
+
+    #     logger.info(f"Homopolymer compressing '{raw_contigs_fpath}' into '{contigs_fpath}'")
+    #     # hoco_log_fpath = contigs_fpath + ".log"
+    #     # logger.info(f"Hoco log: {hoco_log_fpath}")
+    #     # hoco_log_file = open(hoco_log_fpath, 'a')
+    #     hoco_return_code = qutils.call_subprocess([qconfig.hoco_binary, raw_contigs_fpath, contigs_fpath])
+    #     if hoco_return_code != 0:
+    #         logger.info(f"Homopolymer compression returned code {hoco_return_code}")
+    #         return hoco_return_code
+
+    logger.info(f"Running minimap with\nout_fpath: {out_fpath}\nref_fpath: {ref_fpath}\ncontigs_fpath: {contigs_fpath}")
 
     if qconfig.min_IDY < 90:
         preset = 'asm20'
@@ -73,10 +110,14 @@ def run_minimap(out_fpath, ref_fpath, contigs_fpath, log_err_fpath, index, max_t
     num_alignments = '100' if qconfig.is_combined_ref else '50'
     additional_options = ['-B5', '-O4,16', '--no-long-join', '-r', str(qconfig.MAX_INDEL_LENGTH),
                           '-N', num_alignments, '-s', str(qconfig.min_alignment), '-z', '200']
-    cmdline = [minimap_fpath(), '-c', '-x', preset] + (additional_options if not qconfig.large_genome else []) + \
+    hoco_options = ["-H"]
+    cmdline = [minimap_fpath(), '-c', '-x', preset] + (additional_options if not qconfig.large_genome else []) + (hoco_options if qconfig.minimap_hoco else []) + \
               ['--mask-level', mask_level, '--min-occ', '200', '-g', '2500', '--score-N', '2', '--cs', '-t', str(max_threads), ref_fpath, contigs_fpath]
     return_code = qutils.call_subprocess(cmdline, stdout=open(out_fpath, 'w'), stderr=open(log_err_fpath, 'a'),
                                          indent='  ' + qutils.index_to_str(index))
+
+    # if qconfig.minimap_hoco:
+    #     logger.info(f"Homopolymer decompressing '{out_fpath}' into '{raw_out_fpath}'")
 
     return return_code
 

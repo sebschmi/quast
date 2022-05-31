@@ -270,6 +270,20 @@ def parse_options(logger, quast_args):
     quast_py_args = quast_args[1:]
 
     options = [
+        (['--minimap-hoco'], dict(
+             dest='minimap_hoco',
+             action='store_true')
+         ),
+        (['--hoco-binary'], dict(
+             dest='hoco_binary',
+             type='file',
+             action='store')
+         ),
+        (['--hodeco-binary'], dict(
+             dest='hodeco_binary',
+             type='file',
+             action='store')
+         ),
         (['--debug'], dict(
              dest='debug',
              action='store_true')

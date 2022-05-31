@@ -79,6 +79,9 @@ all_labels_from_dirs = False
 run_busco = False
 large_genome = False
 use_kmc = False
+minimap_hoco = False
+hoco_binary = ""
+hodeco_binary = ""
 
 # ideal assembly section
 optimal_assembly = False
@@ -399,6 +402,7 @@ def usage(show_hidden=False, mode=None, short=True, stream=sys.stdout):
         stream.write("                                  Optional 'type' can be specified for extracting only a specific feature type from GFF\n")
     stream.write("-m  --min-contig  <int>           Lower threshold for contig length [default: %d]\n" % m_default)
     stream.write("-t  --threads     <int>           Maximum number of threads [default: 25% of CPUs]\n")
+    stream.write("    --minimap-hoco                Use homopolymer compression for minimap alignment\n")
 
     stream.write("\n")
     if short:
