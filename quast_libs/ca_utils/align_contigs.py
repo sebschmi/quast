@@ -96,7 +96,7 @@ def run_minimap(out_fpath, ref_fpath, contigs_fpath, log_err_fpath, index, max_t
     #         logger.info(f"Homopolymer compression returned code {hoco_return_code}")
     #         return hoco_return_code
 
-    logger.info(f"Running minimap with\nout_fpath: {out_fpath}\nref_fpath: {ref_fpath}\ncontigs_fpath: {contigs_fpath}")
+    logger.info(f"Running minimap with\nout_fpath: {out_fpath}\nref_fpath: {ref_fpath}\ncontigs_fpath: {contigs_fpath}\nlog_err_fpath: {log_err_fpath}")
 
     if qconfig.min_IDY < 90:
         preset = 'asm20'
