@@ -80,6 +80,7 @@ run_busco = False
 large_genome = False
 use_kmc = False
 minimap_hoco = False
+minimap_hoco_wrapped = False
 hoco_binary = ""
 hodeco_binary = ""
 

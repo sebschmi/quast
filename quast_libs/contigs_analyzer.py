@@ -72,6 +72,7 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
     genome_mapping = {}
     genome_length = 0
     for chr_name, chr_len in reference_chromosomes.items():
+        logger.info(f"      Chromosome {chr_name} has length {chr_len}")
         genome_mapping[chr_name] = [0] * (chr_len + 1)
         maximum_contig_align_size_per_ref_base[chr_name] = [0] * (chr_len + 1)
         strict_maximum_contig_align_size_per_ref_base[chr_name] = [0] * (chr_len + 1)
@@ -126,18 +127,27 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
                     contig_length = 0
 
                 if align.s1 < align.e1:
-                    for pos in range(align.s1, align.e1 + 1):
+                    for pos in range(align.s1, align.e1):
+                        assert pos >= 0
+                        if pos >= len(genome_mapping[align.ref]):
+                            continue
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
                         strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])
                         maximum_contig_length_per_ref_base[align.ref][pos] = max(contig_length, maximum_contig_length_per_ref_base[align.ref][pos])
                 else:
                     for pos in range(align.s1, len(genome_mapping[align.ref])):
+                        assert pos >= 0
+                        if pos >= len(genome_mapping[align.ref]):
+                            continue
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
                         strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])
                         maximum_contig_length_per_ref_base[align.ref][pos] = max(contig_length, maximum_contig_length_per_ref_base[align.ref][pos])
-                    for pos in range(1, align.e1 + 1):
+                    for pos in range(1, align.e1):
+                        assert pos >= 0
+                        if pos >= len(genome_mapping[align.ref]):
+                            continue
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
                         strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])

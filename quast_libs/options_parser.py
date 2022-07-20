@@ -274,6 +274,10 @@ def parse_options(logger, quast_args):
              dest='minimap_hoco',
              action='store_true')
          ),
+        (['--minimap-hoco-wrapped'], dict(
+             dest='minimap_hoco_wrapped',
+             action='store_true')
+         ),
         (['--hoco-binary'], dict(
              dest='hoco_binary',
              type='file',

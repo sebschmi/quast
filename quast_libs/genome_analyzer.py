@@ -127,7 +127,9 @@ def process_single_file(contigs_fpath, index, coords_dirpath, genome_stats_dirpa
             if gene_searching_enabled:
                 aligned_blocks_by_contig_name[contig_name].append(AlignedBlock(seqname=chr_name, start=s1, end=e1,
                                                                                contig=contig_name, start_in_contig=s2, end_in_contig=e2))
-            for i in range(s1, e1 + 1):
+            for i in range(s1, e1):
+                if e1 >= len(genome_mapping[chr_name]):
+                    continue
                 genome_mapping[chr_name][i] = 1
 
     for chr_name in genome_mapping.keys():
