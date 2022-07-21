@@ -8,7 +8,7 @@
 from __future__ import with_statement
 
 import re
-import os
+import os, sys
 from os.path import isfile
 import datetime
 
@@ -87,6 +87,7 @@ def run_minimap(out_fpath, ref_fpath, contigs_fpath, log_err_fpath, index, max_t
         hoco_return_code = qutils.call_subprocess([qconfig.hoco_binary, raw_ref_fpath, ref_fpath, ref_hodeco_map_fpath])
         if hoco_return_code != 0:
             logger.info(f"Homopolymer compression returned code {hoco_return_code}")
+            sys.exit(f"Homopolymer compression returned code {hoco_return_code}")
             return hoco_return_code
 
         logger.info(f"Homopolymer compressing '{raw_contigs_fpath}' into '{contigs_fpath}'")
@@ -96,6 +97,7 @@ def run_minimap(out_fpath, ref_fpath, contigs_fpath, log_err_fpath, index, max_t
         hoco_return_code = qutils.call_subprocess([qconfig.hoco_binary, raw_contigs_fpath, contigs_fpath, contigs_hodeco_map_fpath])
         if hoco_return_code != 0:
             logger.info(f"Homopolymer compression returned code {hoco_return_code}")
+            sys.exit(f"Homopolymer compression returned code {hoco_return_code}")
             return hoco_return_code
 
     logger.info(f"Running minimap with\nout_fpath: {out_fpath}\nref_fpath: {ref_fpath}\ncontigs_fpath: {contigs_fpath}\nlog_err_fpath: {log_err_fpath}")
@@ -118,12 +120,16 @@ def run_minimap(out_fpath, ref_fpath, contigs_fpath, log_err_fpath, index, max_t
     logger.info(f"minimap cmdline: {cmdline}")
     return_code = qutils.call_subprocess(cmdline, stdout=open(out_fpath, 'w'), stderr=open(log_err_fpath, 'a'),
                                          indent='  ' + qutils.index_to_str(index))
+    if return_code != 0:
+        logger.info(f"Minimap2 returned code {return_code}")
+        sys.exit(f"Minimap2 returned code {return_code}")
 
     if qconfig.minimap_hoco_wrapped:
         logger.info(f"Homopolymer decompressing '{raw_out_fpath}' into '{out_fpath}'")
         hodeco_return_code = qutils.call_subprocess([qconfig.hodeco_binary, "--input", out_fpath, "--output", raw_out_fpath, "--query-hodeco-map", contigs_hodeco_map_fpath, "--target-hodeco-map", ref_hodeco_map_fpath])
         if hoco_return_code != 0:
-            logger.info(f"Homopolymer compression returned code {hoco_return_code}")
+            logger.info(f"Homopolymer decompression returned code {hoco_return_code}")
+            sys.exit(f"Homopolymer decompression returned code {hoco_return_code}")
             return hoco_return_code
 
     return return_code
