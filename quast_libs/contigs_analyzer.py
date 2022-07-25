@@ -160,7 +160,7 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
 
     covered_bases = sum([sum(genome_mapping[chrom]) for chrom in genome_mapping])
     if covered_bases == 0:
-        logger.warn(f"      Found no covered bases, setting it to one anyways to prevent division by zero.")
+        logger.warning(f"      Found no covered bases, setting it to one anyways to prevent division by zero.")
         covered_bases = 1
 
     maximum_contig_align_size_per_ref_base = [align_size for contig in maximum_contig_align_size_per_ref_base.values() for align_size in contig]
