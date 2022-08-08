@@ -152,8 +152,8 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
                         strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])
                         maximum_contig_length_per_ref_base[align.ref][pos] = max(contig_length, maximum_contig_length_per_ref_base[align.ref][pos])
-            for i in ns_by_chromosomes[align.ref]:
-                genome_mapping[align.ref][i] = 0
+            for pos in ns_by_chromosomes[align.ref]:
+                genome_mapping[align.ref][pos] = 0
                 maximum_contig_align_size_per_ref_base[align.ref][pos] = 0
                 strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = 0
                 maximum_contig_length_per_ref_base[align.ref][pos] = 0
