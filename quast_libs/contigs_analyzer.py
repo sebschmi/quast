@@ -130,6 +130,7 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
                     for pos in range(align.s1, align.e1):
                         assert pos >= 0
                         if pos >= len(genome_mapping[align.ref]):
+                            logger.info(f"WARN alignment out of ref bounds! contig: {align.contig}; ref: {align.ref}; bounds: [0, {len(genome_mapping[align.ref])}]; alignment: [{align.s1}, {align.e1}]")
                             continue
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
@@ -138,15 +139,15 @@ def analyze_coverage(ref_aligns, reference_chromosomes, ns_by_chromosomes, used_
                 else:
                     for pos in range(align.s1, len(genome_mapping[align.ref])):
                         assert pos >= 0
-                        if pos >= len(genome_mapping[align.ref]):
-                            continue
+                        assert pos < len(genome_mapping[align.ref])
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])
                         strict_maximum_contig_align_size_per_ref_base[align.ref][pos] = max(strict_align_size, strict_maximum_contig_align_size_per_ref_base[align.ref][pos])
                         maximum_contig_length_per_ref_base[align.ref][pos] = max(contig_length, maximum_contig_length_per_ref_base[align.ref][pos])
-                    for pos in range(1, align.e1):
+                    for pos in range(0, align.e1):
                         assert pos >= 0
                         if pos >= len(genome_mapping[align.ref]):
+                            logger.info(f"WARN alignment out of ref bounds! contig: {align.contig}; ref: {align.ref}; bounds: [0, {len(genome_mapping[align.ref])}]; alignment: [0, {align.e1}]")
                             continue
                         genome_mapping[align.ref][pos] = 1
                         maximum_contig_align_size_per_ref_base[align.ref][pos] = max(align_size, maximum_contig_align_size_per_ref_base[align.ref][pos])

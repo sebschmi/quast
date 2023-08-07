@@ -125,7 +125,7 @@ def run_minimap(out_fpath, ref_fpath, contigs_fpath, log_err_fpath, index, max_t
         sys.exit(f"Minimap2 returned code {return_code}")
 
     if qconfig.minimap_hoco_wrapped:
-        logger.info(f"Homopolymer decompressing '{raw_out_fpath}' into '{out_fpath}'")
+        logger.info(f"Homopolymer decompressing '{out_fpath}' into '{raw_out_fpath}'")
         hodeco_return_code = qutils.call_subprocess([qconfig.hodeco_binary, "--input", out_fpath, "--output", raw_out_fpath, "--query-hodeco-map", contigs_hodeco_map_fpath, "--target-hodeco-map", ref_hodeco_map_fpath])
         if hoco_return_code != 0:
             logger.info(f"Homopolymer decompression returned code {hoco_return_code}")
@@ -153,9 +153,9 @@ def parse_minimap_output(raw_coords_fpath, coords_fpath):
                 fs = line.split('\t')
                 if len(fs) < 10:
                     continue
-                contig, align_start, align_end, strand, ref_name, ref_start = \
-                    fs[0], fs[2], fs[3], fs[4], fs[5], fs[7]
-                align_start, align_end, ref_start = map(int, (align_start, align_end, ref_start))
+                contig, contig_len, align_start, align_end, strand, ref_name, chromosome_len, ref_start, ref_end = \
+                    fs[0], fs[1], fs[2], fs[3], fs[4], fs[5], fs[6], fs[7], fs[8]
+                contig_len, align_start, align_end, chromosome_len, ref_start, ref_end = map(int, (contig_len, align_start, align_end, chromosome_len, ref_start, ref_end))
                 align_start += 1
                 ref_start += 1
                 if fs[-1].startswith('cs'):
@@ -187,9 +187,17 @@ def parse_minimap_output(raw_coords_fpath, coords_fpath):
                     elif operation == 'I':
                         align_len += n_bases
 
+                total_aligned_bases += align_len
+
+                if qconfig.minimap_hoco_wrapped:
+                    # do not use coordinates computed from CIGARs, as CIGARs are inaccurate due to homopolymer compression
+                    align_len = abs(align_end - align_start) + 1
+                    ref_len = ref_end - ref_start + 1
+
                 align_end = align_start + (align_len - 1) * strand_direction
                 ref_end = ref_start + ref_len - 1
-                total_aligned_bases += align_len
+
+                
 
                 idy = '%.2f' % (matched_bases * 100.0 / bases_in_mapping)
                 if ref_name != "*":
